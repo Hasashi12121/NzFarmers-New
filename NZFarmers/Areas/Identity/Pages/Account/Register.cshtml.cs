@@ -102,6 +102,13 @@ namespace NZFarmers.Areas.Identity.Pages.Account
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
+            // Security: only Farmer or Consumer can be chosen at public registration.
+            // Anything else (including Admin) is rejected.
+            if (Input.Role != RoleType.Farmer && Input.Role != RoleType.Consumer)
+            {
+                ModelState.AddModelError("Input.Role", "Please select whether you're joining as a Farmer or a Consumer.");
+            }
+
             if (ModelState.IsValid)
             {
                 var user = CreateUser();

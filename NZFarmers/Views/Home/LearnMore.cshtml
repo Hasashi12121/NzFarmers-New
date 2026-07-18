@@ -1,0 +1,215 @@
+@{
+    ViewData["Title"] = "How It Works";
+}
+
+<style>
+    .lm-page { width: 100vw; margin-left: calc(-50vw + 50%); }
+
+    /* Hero */
+    .lm-hero {
+        background: linear-gradient(150deg, #14532d 0%, #166534 45%, #16a34a 100%);
+        color: #fff; text-align: center; padding: 5rem 1.5rem 6rem;
+        position: relative; overflow: hidden;
+    }
+    .lm-hero::after { content: ''; position: absolute; left: -100px; bottom: -140px; width: 340px; height: 340px; border-radius: 50%; background: rgba(255,255,255,.05); }
+    .lm-hero::before { content: ''; position: absolute; right: -80px; top: -100px; width: 300px; height: 300px; border-radius: 50%; background: rgba(255,255,255,.06); }
+    .lm-hero-badge { display: inline-flex; align-items: center; gap: .5rem; background: rgba(255,255,255,.15); border-radius: 50px; padding: .45rem 1.2rem; font-size: .85rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 1.5rem; }
+    .lm-hero h1 { font-size: clamp(2.1rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -.03em; margin-bottom: 1rem; }
+    .lm-hero h1 span { color: #86efac; }
+    .lm-hero p { max-width: 640px; margin: 0 auto; color: rgba(255,255,255,.88); font-size: 1.1rem; line-height: 1.7; }
+
+    .lm-container { max-width: 1140px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* Steps */
+    .lm-section { padding: 4.5rem 0; }
+    .lm-section.alt { background: var(--white); }
+    .lm-kicker { text-align: center; color: var(--green-600); font-weight: 800; font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; margin-bottom: .5rem; }
+    .lm-h2 { text-align: center; font-size: 2rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: 3rem; }
+
+    .lm-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
+    .lm-step {
+        background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
+        padding: 2rem 1.75rem; box-shadow: var(--shadow-sm); position: relative;
+        transition: transform .2s, box-shadow .2s;
+    }
+    .lm-section.alt .lm-step { background: var(--gray-50); }
+    .lm-step:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .lm-step-num {
+        position: absolute; top: -16px; left: 1.6rem;
+        background: var(--green-600); color: white; font-weight: 800;
+        width: 34px; height: 34px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 10px rgba(22,163,74,.4);
+    }
+    .lm-step-icon { font-size: 1.9rem; color: var(--green-600); margin: .5rem 0 1rem; }
+    .lm-step h4 { font-weight: 800; font-size: 1.08rem; margin-bottom: .5rem; }
+    .lm-step p { color: var(--gray-500); font-size: .92rem; line-height: 1.65; margin: 0; }
+
+    /* Feature grid */
+    .lm-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+    .lm-feature { display: flex; gap: 1.1rem; align-items: flex-start; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm); }
+    .lm-feature-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--green-100); color: var(--green-700); font-size: 1.2rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .lm-feature h5 { font-weight: 800; font-size: 1rem; margin-bottom: .35rem; }
+    .lm-feature p { color: var(--gray-500); font-size: .88rem; line-height: 1.6; margin: 0; }
+
+    /* CTA */
+    .lm-cta {
+        background: linear-gradient(150deg, #14532d, #16a34a);
+        border-radius: 24px; color: white; text-align: center;
+        padding: 3.5rem 2rem; margin: 0 0 4.5rem;
+    }
+    .lm-cta h2 { font-weight: 800; font-size: 1.9rem; letter-spacing: -.02em; margin-bottom: .75rem; }
+    .lm-cta p { color: rgba(255,255,255,.85); margin-bottom: 1.75rem; }
+    .lm-cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .lm-btn-solid { display: inline-flex; align-items: center; gap: .55rem; background: var(--orange); color: white; text-decoration: none; border-radius: 50px; padding: .85rem 2rem; font-weight: 700; font-size: 1rem; transition: background .15s, transform .15s; box-shadow: 0 4px 14px rgba(249,115,22,.4); }
+    .lm-btn-solid:hover { background: var(--orange-dark); color: white; transform: translateY(-2px); }
+    .lm-btn-ghost { display: inline-flex; align-items: center; gap: .55rem; background: rgba(255,255,255,.12); color: white; text-decoration: none; border: 1.5px solid rgba(255,255,255,.4); border-radius: 50px; padding: .85rem 2rem; font-weight: 700; font-size: 1rem; transition: background .15s; }
+    .lm-btn-ghost:hover { background: rgba(255,255,255,.22); color: white; }
+</style>
+
+<div class="lm-page">
+
+    <!-- Hero -->
+    <div class="lm-hero">
+        <div class="lm-hero-badge"><i class="fas fa-seedling"></i> How NZFarmers Works</div>
+        <h1>From <span>their paddock</span> to <span>your plate</span></h1>
+        <p>
+            NZFarmers is the marketplace built just for New Zealand's farming community —
+            no middlemen, no getting lost in generic marketplaces. Just real farms,
+            fresh produce, and fair prices.
+        </p>
+    </div>
+
+    <!-- For buyers -->
+    <div class="lm-section">
+        <div class="lm-container">
+            <div class="lm-kicker">For Buyers</div>
+            <h2 class="lm-h2">Fresh food in four easy steps</h2>
+            <div class="lm-steps">
+                <div class="lm-step">
+                    <div class="lm-step-num">1</div>
+                    <div class="lm-step-icon"><i class="fas fa-user-plus"></i></div>
+                    <h4>Create a free account</h4>
+                    <p>Sign up as a consumer in under a minute — or continue with your Google account.</p>
+                </div>
+                <div class="lm-step">
+                    <div class="lm-step-num">2</div>
+                    <div class="lm-step-icon"><i class="fas fa-search"></i></div>
+                    <h4>Browse local farms</h4>
+                    <p>Explore produce by category or search for farms near you. Every listing comes from a verified NZ farmer.</p>
+                </div>
+                <div class="lm-step">
+                    <div class="lm-step-num">3</div>
+                    <div class="lm-step-icon"><i class="fas fa-lock"></i></div>
+                    <h4>Check out securely</h4>
+                    <p>Add to your cart and pay with any card through Stripe — the same payment tech trusted by millions worldwide.</p>
+                </div>
+                <div class="lm-step">
+                    <div class="lm-step-num">4</div>
+                    <div class="lm-step-icon"><i class="fas fa-truck"></i></div>
+                    <h4>Track your order</h4>
+                    <p>Follow your order from the farm to your door, and leave a review to help the community grow.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- For farmers -->
+    <div class="lm-section alt">
+        <div class="lm-container">
+            <div class="lm-kicker">For Farmers</div>
+            <h2 class="lm-h2">Your farm, online in minutes</h2>
+            <div class="lm-steps">
+                <div class="lm-step">
+                    <div class="lm-step-num">1</div>
+                    <div class="lm-step-icon"><i class="fas fa-tractor"></i></div>
+                    <h4>Build your farm profile</h4>
+                    <p>Tell your story — your farm name, location, photo and what makes your produce special.</p>
+                </div>
+                <div class="lm-step">
+                    <div class="lm-step-num">2</div>
+                    <div class="lm-step-icon"><i class="fas fa-camera"></i></div>
+                    <h4>List your products</h4>
+                    <p>Add photos, prices and stock in a simple form. Your listings appear instantly across the marketplace.</p>
+                </div>
+                <div class="lm-step">
+                    <div class="lm-step-num">3</div>
+                    <div class="lm-step-icon"><i class="fas fa-bell"></i></div>
+                    <h4>Receive orders</h4>
+                    <p>Watch orders roll into your Sales Dashboard with revenue stats, and update delivery status as you go.</p>
+                </div>
+                <div class="lm-step">
+                    <div class="lm-step-num">4</div>
+                    <div class="lm-step-icon"><i class="fas fa-star"></i></div>
+                    <h4>Grow your reputation</h4>
+                    <p>Happy customers leave star ratings that build trust — and bring more buyers to your gate.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Why us -->
+    <div class="lm-section">
+        <div class="lm-container">
+            <div class="lm-kicker">Why NZFarmers</div>
+            <h2 class="lm-h2">Built different from Trade Me &amp; Facebook</h2>
+            <div class="lm-features">
+                <div class="lm-feature">
+                    <div class="lm-feature-icon"><i class="fas fa-bullseye"></i></div>
+                    <div>
+                        <h5>100% farming focused</h5>
+                        <p>No competing with second-hand couches. Every listing is agricultural, properly categorised, and easy to find.</p>
+                    </div>
+                </div>
+                <div class="lm-feature">
+                    <div class="lm-feature-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div>
+                        <h5>Verified farmer profiles</h5>
+                        <p>Buy with confidence — every seller has a real farm profile with location, contact details and customer reviews.</p>
+                    </div>
+                </div>
+                <div class="lm-feature">
+                    <div class="lm-feature-icon"><i class="fas fa-calendar-check"></i></div>
+                    <div>
+                        <h5>Market events</h5>
+                        <p>Find farmers' markets happening near you, or promote your own — something no generic marketplace offers.</p>
+                    </div>
+                </div>
+                <div class="lm-feature">
+                    <div class="lm-feature-icon"><i class="fas fa-graduation-cap"></i></div>
+                    <div>
+                        <h5>Learn &amp; grow</h5>
+                        <p>Free educational resources on sustainable farming, seasonal growing and getting the most from your land.</p>
+                    </div>
+                </div>
+                <div class="lm-feature">
+                    <div class="lm-feature-icon"><i class="fas fa-hand-holding-heart"></i></div>
+                    <div>
+                        <h5>Community first</h5>
+                        <p>Reviews, ratings and direct farmer-to-buyer connections strengthen local food networks across Aotearoa.</p>
+                    </div>
+                </div>
+                <div class="lm-feature">
+                    <div class="lm-feature-icon"><i class="fas fa-dollar-sign"></i></div>
+                    <div>
+                        <h5>Fair for farmers</h5>
+                        <p>Selling direct means farmers keep more of every dollar — and you pay less for fresher food.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="lm-container">
+        <div class="lm-cta">
+            <h2>Ready to get started?</h2>
+            <p>Join the growing community of NZ farmers and food lovers today.</p>
+            <div class="lm-cta-actions">
+                <a class="lm-btn-solid" asp-area="Identity" asp-page="/Account/Register"><i class="fas fa-user-plus"></i> Create Free Account</a>
+                <a class="lm-btn-ghost" asp-controller="FarmerProducts" asp-action="Index"><i class="fas fa-seedling"></i> Browse Products</a>
+            </div>
+        </div>
+    </div>
+
+</div>

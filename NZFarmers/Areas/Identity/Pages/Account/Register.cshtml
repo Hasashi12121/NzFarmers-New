@@ -1,101 +1,212 @@
-﻿@page
+@page
 @model RegisterModel
 @{
     ViewData["Title"] = "Register";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white text-center">
-                    <h3>Create Your Account</h3>
-                </div>
-                <div class="card-body">
-                    <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+<style>
+    .auth-page {
+        min-height: calc(100vh - 260px);
+        display: flex; align-items: center; justify-content: center;
+        padding: 3rem 1rem 4rem;
+    }
+    .auth-shell {
+        display: grid; grid-template-columns: 1fr 1.15fr;
+        max-width: 1040px; width: 100%;
+        background: #fff; border: 1px solid #e5e7eb; border-radius: 20px;
+        overflow: hidden; box-shadow: 0 20px 50px -12px rgba(0,0,0,.15);
+    }
 
-                        <div class="mb-3">
-                            <label asp-for="Input.FirstName" class="form-label">First Name</label>
-                            <input asp-for="Input.FirstName" class="form-control" placeholder="John" />
-                            <span asp-validation-for="Input.FirstName" class="text-danger"></span>
-                        </div>
+    .auth-brand {
+        background: linear-gradient(150deg, #14532d 0%, #166534 45%, #16a34a 100%);
+        color: #fff; padding: 3rem 2.5rem; display: flex; flex-direction: column; justify-content: center;
+        position: relative; overflow: hidden;
+    }
+    .auth-brand::after { content: ''; position: absolute; right: -80px; bottom: -80px; width: 280px; height: 280px; border-radius: 50%; background: rgba(255,255,255,.06); }
+    .auth-brand::before { content: ''; position: absolute; right: 30px; top: -60px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,.05); }
+    .auth-brand-logo { font-size: 2.4rem; margin-bottom: 1.25rem; }
+    .auth-brand h2 { font-weight: 800; font-size: 1.75rem; letter-spacing: -.02em; margin-bottom: .75rem; }
+    .auth-brand p { color: rgba(255,255,255,.85); line-height: 1.7; font-size: .95rem; }
+    .auth-perks { list-style: none; padding: 0; margin: 1.5rem 0 0; display: flex; flex-direction: column; gap: .7rem; }
+    .auth-perks li { display: flex; align-items: center; gap: .6rem; font-size: .88rem; color: rgba(255,255,255,.9); }
+    .auth-perks i { color: #86efac; }
 
-                        <div class="mb-3">
-                            <label asp-for="Input.LastName" class="form-label">Last Name</label>
-                            <input asp-for="Input.LastName" class="form-control" placeholder="Doe" />
-                            <span asp-validation-for="Input.LastName" class="text-danger"></span>
-                        </div>
+    .auth-form { padding: 2.75rem 2.75rem; }
+    .auth-title { font-size: 1.65rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: .35rem; }
+    .auth-sub { color: #6b7280; font-size: .92rem; margin-bottom: 1.5rem; }
+    .auth-sub a { color: #16a34a; font-weight: 700; text-decoration: none; }
+    .auth-sub a:hover { text-decoration: underline; }
 
-                        <div class="mb-3">
-                            <label asp-for="Input.Email" class="form-label">Email</label>
-                            <input asp-for="Input.Email" class="form-control" autocomplete="username" placeholder="name@example.com" />
-                            <span asp-validation-for="Input.Email" class="text-danger"></span>
-                        </div>
+    .af-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+    .af-field { margin-bottom: 1.05rem; }
+    .af-field.full { grid-column: 1 / -1; }
+    .af-label { display: block; font-size: .85rem; font-weight: 600; color: #374151; margin-bottom: .4rem; }
+    .af-input, .af-select {
+        width: 100%; border: 1.5px solid #d1d5db; border-radius: 10px;
+        padding: .75rem 1rem; font-size: .95rem; outline: none; background: #fff;
+        transition: border-color .15s, box-shadow .15s; font-family: inherit;
+    }
+    .af-input:focus, .af-select:focus { border-color: #16a34a; box-shadow: 0 0 0 4px rgba(22,163,74,.12); }
+    .af-error { color: #dc2626; font-size: .78rem; margin-top: .3rem; display: block; }
 
-                        <div class="mb-3">
-                            <label asp-for="Input.ContactNumber"></label>
-                            <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="nz-prefix">+64</span>
-                                </div>
-                                <input asp-for="Input.ContactNumber" class="form-control" aria-describedby="nz-prefix" placeholder="Enter phone number without leading 0" />
-                            </div>
-                            <span asp-validation-for="Input.ContactNumber" class="text-danger"></span>
-                        </div>
+    .af-phone { display: flex; border: 1.5px solid #d1d5db; border-radius: 10px; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+    .af-phone:focus-within { border-color: #16a34a; box-shadow: 0 0 0 4px rgba(22,163,74,.12); }
+    .af-phone-prefix { background: #f3f4f6; color: #6b7280; font-weight: 700; padding: .75rem .9rem; display: flex; align-items: center; border-right: 1.5px solid #d1d5db; font-size: .9rem; }
+    .af-phone input { border: none !important; box-shadow: none !important; border-radius: 0 !important; flex: 1; padding: .75rem 1rem; font-size: .95rem; outline: none; }
 
-                        <div class="mb-3">
-                            <label asp-for="Input.Password" class="form-label">Password</label>
-                            <input asp-for="Input.Password" class="form-control" autocomplete="new-password" placeholder="Password" />
-                            <span asp-validation-for="Input.Password" class="text-danger"></span>
-                        </div>
+    /* Role picker */
+    .role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .role-card { position: relative; }
+    .role-card input { position: absolute; opacity: 0; }
+    .role-card label {
+        display: flex; flex-direction: column; align-items: center; gap: .35rem;
+        border: 1.5px solid #d1d5db; border-radius: 12px; padding: .9rem .5rem;
+        cursor: pointer; text-align: center; transition: border-color .15s, background .15s, transform .1s;
+        width: 100%; font-size: .85rem; font-weight: 700; color: #374151;
+    }
+    .role-card label i { font-size: 1.25rem; color: #9ca3af; transition: color .15s; }
+    .role-card label small { font-weight: 500; color: #9ca3af; font-size: .72rem; }
+    .role-card input:checked + label { border-color: #16a34a; background: #f0fdf4; color: #15803d; }
+    .role-card input:checked + label i { color: #16a34a; }
+    .role-card label:hover { transform: translateY(-1px); border-color: #16a34a; }
 
-                        <div class="mb-3">
-                            <label asp-for="Input.ConfirmPassword" class="form-label">Confirm Password</label>
-                            <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="Confirm Password" />
-                            <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-                        </div>
+    .af-submit {
+        width: 100%; background: #16a34a; color: #fff; border: none;
+        border-radius: 50px; padding: .9rem; font-weight: 700; font-size: 1rem;
+        cursor: pointer; margin-top: .75rem; transition: background .15s, transform .15s, box-shadow .15s;
+        box-shadow: 0 4px 14px rgba(22,163,74,.35);
+    }
+    .af-submit:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(22,163,74,.45); }
 
-                        <!-- Updated to reference the correct RoleType namespace -->
-                        <div class="mb-4">
-                            <label asp-for="Input.Role" class="form-label">Role</label>
-                            <select asp-for="Input.Role" class="form-select"
-                                    asp-items="Html.GetEnumSelectList<NZFarmers.Areas.Identity.Data.RoleType>()">
-                                <option value="">-- Select Role --</option>
-                            </select>
-                            <span asp-validation-for="Input.Role" class="text-danger"></span>
-                        </div>
+    .af-divider { display: flex; align-items: center; gap: 1rem; margin: 1.4rem 0; color: #9ca3af; font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+    .af-divider::before, .af-divider::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
 
-                        <button id="registerSubmit" type="submit" class="btn btn-primary w-100">Register</button>
-                    </form>
-                </div>
-            </div>
+    .af-google {
+        width: 100%; display: flex; align-items: center; justify-content: center; gap: .65rem;
+        background: #fff; border: 1.5px solid #d1d5db; border-radius: 50px;
+        padding: .8rem; font-weight: 700; font-size: .95rem; color: #374151;
+        cursor: pointer; transition: background .15s, border-color .15s;
+    }
+    .af-google:hover { background: #f9fafb; border-color: #9ca3af; }
+    .af-google img { width: 20px; height: 20px; }
 
-            <div class="text-center mt-4">
-                <h5>Or register using</h5>
-                <hr />
-                @if ((Model.ExternalLogins?.Count ?? 0) == 0)
-                {
-                    <div class="alert alert-warning">
-                        No external authentication services configured.
-                        <a href="https://go.microsoft.com/fwlink/?LinkID=532715" target="_blank">Learn how to set them up.</a>
-                    </div>
-                }
-                else
-                {
-                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-                        <div class="d-grid gap-2">
-                            @foreach (var provider in Model.ExternalLogins!)
-                            {
-                                <button type="submit" class="btn btn-outline-primary" name="provider" value="@provider.Name">
-                                    Register with @provider.DisplayName
-                                </button>
-                            }
-                        </div>
-                    </form>
-                }
-            </div>
+    .auth-validation { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #b91c1c; padding: .85rem 1.1rem; font-size: .85rem; margin-bottom: 1.25rem; }
+    .auth-validation:empty { display: none; }
+    .auth-validation ul { margin: 0; padding-left: 1.1rem; }
+
+    @@media (max-width: 900px) {
+        .auth-shell { grid-template-columns: 1fr; max-width: 520px; }
+        .auth-brand { display: none; }
+        .auth-form { padding: 2.25rem 1.75rem; }
+        .af-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="auth-page">
+    <div class="auth-shell">
+
+        <!-- Brand side -->
+        <div class="auth-brand">
+            <div class="auth-brand-logo">🌿</div>
+            <h2>Join the NZFarmers community</h2>
+            <p>Whether you're here to sell your harvest or to fill your table with the freshest local produce — you're in the right place.</p>
+            <ul class="auth-perks">
+                <li><i class="fas fa-check-circle"></i> Free to join, no hidden fees</li>
+                <li><i class="fas fa-check-circle"></i> Farmers: list products &amp; reach all of NZ</li>
+                <li><i class="fas fa-check-circle"></i> Consumers: buy direct from the source</li>
+            </ul>
         </div>
+
+        <!-- Form side -->
+        <div class="auth-form">
+            <h1 class="auth-title">Create your account</h1>
+            <p class="auth-sub">Already have one? <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Log in</a></p>
+
+            <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                <div asp-validation-summary="ModelOnly" class="auth-validation" role="alert"></div>
+
+                <div class="af-grid">
+                    <div class="af-field">
+                        <label asp-for="Input.FirstName" class="af-label">First name</label>
+                        <input asp-for="Input.FirstName" class="af-input" placeholder="John" />
+                        <span asp-validation-for="Input.FirstName" class="af-error"></span>
+                    </div>
+                    <div class="af-field">
+                        <label asp-for="Input.LastName" class="af-label">Last name</label>
+                        <input asp-for="Input.LastName" class="af-input" placeholder="Doe" />
+                        <span asp-validation-for="Input.LastName" class="af-error"></span>
+                    </div>
+
+                    <div class="af-field full">
+                        <label asp-for="Input.Email" class="af-label">Email</label>
+                        <input asp-for="Input.Email" class="af-input" autocomplete="username" placeholder="you@example.com" />
+                        <span asp-validation-for="Input.Email" class="af-error"></span>
+                    </div>
+
+                    <div class="af-field full">
+                        <label asp-for="Input.ContactNumber" class="af-label">Phone number</label>
+                        <div class="af-phone">
+                            <span class="af-phone-prefix">+64</span>
+                            <input asp-for="Input.ContactNumber" placeholder="21 123 4567" />
+                        </div>
+                        <span asp-validation-for="Input.ContactNumber" class="af-error"></span>
+                    </div>
+
+                    <div class="af-field">
+                        <label asp-for="Input.Password" class="af-label">Password</label>
+                        <input asp-for="Input.Password" class="af-input" autocomplete="new-password" placeholder="••••••••" />
+                        <span asp-validation-for="Input.Password" class="af-error"></span>
+                    </div>
+                    <div class="af-field">
+                        <label asp-for="Input.ConfirmPassword" class="af-label">Confirm password</label>
+                        <input asp-for="Input.ConfirmPassword" class="af-input" autocomplete="new-password" placeholder="••••••••" />
+                        <span asp-validation-for="Input.ConfirmPassword" class="af-error"></span>
+                    </div>
+
+                    <div class="af-field full">
+                        <label class="af-label">I'm joining as a…</label>
+                        <div class="role-cards">
+                            <div class="role-card">
+                                <input type="radio" asp-for="Input.Role" value="Consumer" id="roleConsumer" />
+                                <label for="roleConsumer">
+                                    <i class="fas fa-shopping-basket"></i>
+                                    Consumer
+                                    <small>I want to buy fresh produce</small>
+                                </label>
+                            </div>
+                            <div class="role-card">
+                                <input type="radio" asp-for="Input.Role" value="Farmer" id="roleFarmer" />
+                                <label for="roleFarmer">
+                                    <i class="fas fa-tractor"></i>
+                                    Farmer
+                                    <small>I want to sell my products</small>
+                                </label>
+                            </div>
+                        </div>
+                        <span asp-validation-for="Input.Role" class="af-error"></span>
+                    </div>
+                </div>
+
+                <button id="registerSubmit" type="submit" class="af-submit">
+                    <i class="fas fa-user-plus me-2"></i>Create Account
+                </button>
+            </form>
+
+            @if ((Model.ExternalLogins?.Count ?? 0) > 0)
+            {
+                <div class="af-divider">or</div>
+                <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                    @foreach (var provider in Model.ExternalLogins!)
+                    {
+                        <button type="submit" class="af-google" name="provider" value="@provider.Name">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" onerror="this.style.display='none'" />
+                            Sign up with @provider.DisplayName
+                        </button>
+                    }
+                </form>
+            }
+        </div>
+
     </div>
 </div>
 

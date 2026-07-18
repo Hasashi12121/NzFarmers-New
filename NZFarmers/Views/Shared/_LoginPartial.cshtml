@@ -1,28 +1,44 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 @using NZFarmers.Areas.Identity.Data
 
 @inject SignInManager<NZFarmersUser> SignInManager
 @inject UserManager<NZFarmersUser> UserManager
 
-<ul class="navbar-nav">
 @if (SignInManager.IsSignedIn(User))
 {
-    <li class="nav-item">
-        <a id="manage" class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Hello @UserManager.GetUserName(User)!</a>
-    </li>
-    <li class="nav-item">
-        <form id="logoutForm" class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-            <button id="logout" type="submit" class="nav-link btn btn-link text-dark border-0">Logout</button>
-        </form>
-    </li>
+    var userName = UserManager.GetUserName(User) ?? "";
+    var initial = string.IsNullOrEmpty(userName) ? "?" : userName.Substring(0, 1).ToUpper();
+
+    <div class="nav-dropdown">
+        <a class="dropdown-trigger nav-account-btn" id="manage">
+            <span class="nav-avatar">@initial</span>
+            <span class="nav-account-label">Account</span>
+            <i class="fas fa-chevron-down" style="font-size:.65rem;"></i>
+        </a>
+        <div class="nav-dropdown-menu nav-dropdown-menu-right">
+            <div class="nav-account-hello">
+                Signed in as<br /><strong>@userName</strong>
+            </div>
+            <hr />
+            <a asp-area="Identity" asp-page="/Account/Manage/Index"><i class="fas fa-user-cog"></i> My Account</a>
+            <a asp-area="" asp-controller="Orders" asp-action="MyOrders"><i class="fas fa-receipt"></i> My Orders</a>
+            @if (User.IsInRole("Farmer") || User.IsInRole("Admin"))
+            {
+                <a asp-area="" asp-controller="Orders" asp-action="Selling"><i class="fas fa-store"></i> Sales Dashboard</a>
+            }
+            <hr />
+            <form id="logoutForm" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                <button id="logout" type="submit" class="nav-logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Log out
+                </button>
+            </form>
+        </div>
+    </div>
 }
 else
 {
-    <li class="nav-item">
-        <a class="nav-link text-dark" id="register" asp-area="Identity" asp-page="/Account/Register">Register</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-dark" id="login" asp-area="Identity" asp-page="/Account/Login">Login</a>
-    </li>
+    <div class="nav-auth">
+        <a class="btn-login" id="login" asp-area="Identity" asp-page="/Account/Login">Log in</a>
+        <a class="btn-signup" id="register" asp-area="Identity" asp-page="/Account/Register">Sign up</a>
+    </div>
 }
-</ul>

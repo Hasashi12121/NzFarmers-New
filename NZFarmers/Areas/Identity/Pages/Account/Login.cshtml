@@ -1,80 +1,171 @@
-﻿@page
+@page
 @model LoginModel
 
 @{
     ViewData["Title"] = "Log in";
 }
 
-<h1>@ViewData["Title"]</h1>
-<div class="row">
-    <div class="col-md-4">
-        <section>
+<style>
+    .auth-page {
+        min-height: calc(100vh - 260px);
+        display: flex; align-items: center; justify-content: center;
+        padding: 3rem 1rem 4rem;
+    }
+    .auth-shell {
+        display: grid; grid-template-columns: 1fr 1fr;
+        max-width: 980px; width: 100%;
+        background: #fff; border: 1px solid #e5e7eb; border-radius: 20px;
+        overflow: hidden; box-shadow: 0 20px 50px -12px rgba(0,0,0,.15);
+    }
+
+    /* Brand panel */
+    .auth-brand {
+        background: linear-gradient(150deg, #14532d 0%, #166534 45%, #16a34a 100%);
+        color: #fff; padding: 3rem 2.5rem; display: flex; flex-direction: column; justify-content: center;
+        position: relative; overflow: hidden;
+    }
+    .auth-brand::after {
+        content: ''; position: absolute; right: -80px; bottom: -80px;
+        width: 280px; height: 280px; border-radius: 50%;
+        background: rgba(255,255,255,.06);
+    }
+    .auth-brand::before {
+        content: ''; position: absolute; right: 30px; top: -60px;
+        width: 180px; height: 180px; border-radius: 50%;
+        background: rgba(255,255,255,.05);
+    }
+    .auth-brand-logo { font-size: 2.4rem; margin-bottom: 1.25rem; }
+    .auth-brand h2 { font-weight: 800; font-size: 1.75rem; letter-spacing: -.02em; margin-bottom: .75rem; }
+    .auth-brand p { color: rgba(255,255,255,.85); line-height: 1.7; font-size: .95rem; }
+    .auth-perks { list-style: none; padding: 0; margin: 1.5rem 0 0; display: flex; flex-direction: column; gap: .7rem; }
+    .auth-perks li { display: flex; align-items: center; gap: .6rem; font-size: .88rem; color: rgba(255,255,255,.9); }
+    .auth-perks i { color: #86efac; }
+
+    /* Form panel */
+    .auth-form { padding: 3rem 2.75rem; }
+    .auth-title { font-size: 1.65rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: .35rem; }
+    .auth-sub { color: #6b7280; font-size: .92rem; margin-bottom: 1.75rem; }
+    .auth-sub a { color: #16a34a; font-weight: 700; text-decoration: none; }
+    .auth-sub a:hover { text-decoration: underline; }
+
+    .af-field { margin-bottom: 1.15rem; }
+    .af-label { display: block; font-size: .85rem; font-weight: 600; color: #374151; margin-bottom: .4rem; }
+    .af-input {
+        width: 100%; border: 1.5px solid #d1d5db; border-radius: 10px;
+        padding: .8rem 1rem; font-size: .95rem; outline: none;
+        transition: border-color .15s, box-shadow .15s;
+    }
+    .af-input:focus { border-color: #16a34a; box-shadow: 0 0 0 4px rgba(22,163,74,.12); }
+    .af-error { color: #dc2626; font-size: .8rem; margin-top: .3rem; display: block; }
+
+    .af-row { display: flex; align-items: center; justify-content: space-between; margin: .25rem 0 1.4rem; }
+    .af-remember { display: flex; align-items: center; gap: .45rem; font-size: .85rem; color: #374151; }
+    .af-remember input { accent-color: #16a34a; width: 16px; height: 16px; }
+    .af-forgot { font-size: .85rem; color: #16a34a; font-weight: 600; text-decoration: none; }
+    .af-forgot:hover { text-decoration: underline; }
+
+    .af-submit {
+        width: 100%; background: #16a34a; color: #fff; border: none;
+        border-radius: 50px; padding: .9rem; font-weight: 700; font-size: 1rem;
+        cursor: pointer; transition: background .15s, transform .15s, box-shadow .15s;
+        box-shadow: 0 4px 14px rgba(22,163,74,.35);
+    }
+    .af-submit:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(22,163,74,.45); }
+
+    .af-divider { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; color: #9ca3af; font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+    .af-divider::before, .af-divider::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
+
+    .af-google {
+        width: 100%; display: flex; align-items: center; justify-content: center; gap: .65rem;
+        background: #fff; border: 1.5px solid #d1d5db; border-radius: 50px;
+        padding: .8rem; font-weight: 700; font-size: .95rem; color: #374151;
+        cursor: pointer; transition: background .15s, border-color .15s;
+    }
+    .af-google:hover { background: #f9fafb; border-color: #9ca3af; }
+    .af-google img { width: 20px; height: 20px; }
+
+    .af-foot { text-align: center; margin-top: 1.5rem; font-size: .85rem; color: #6b7280; }
+    .af-foot a { color: #16a34a; font-weight: 600; text-decoration: none; }
+    .af-foot a:hover { text-decoration: underline; }
+
+    .auth-validation { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #b91c1c; padding: .85rem 1.1rem; font-size: .85rem; margin-bottom: 1.25rem; }
+    .auth-validation:empty { display: none; }
+    .auth-validation ul { margin: 0; padding-left: 1.1rem; }
+
+    @@media (max-width: 860px) {
+        .auth-shell { grid-template-columns: 1fr; max-width: 480px; }
+        .auth-brand { display: none; }
+        .auth-form { padding: 2.25rem 1.75rem; }
+    }
+</style>
+
+<div class="auth-page">
+    <div class="auth-shell">
+
+        <!-- Brand side -->
+        <div class="auth-brand">
+            <div class="auth-brand-logo">🌿</div>
+            <h2>Welcome back to NZFarmers</h2>
+            <p>New Zealand's marketplace built just for farmers and the people who love fresh, local food.</p>
+            <ul class="auth-perks">
+                <li><i class="fas fa-check-circle"></i> Buy direct from verified NZ farms</li>
+                <li><i class="fas fa-check-circle"></i> Secure Stripe-powered checkout</li>
+                <li><i class="fas fa-check-circle"></i> Support your local community</li>
+            </ul>
+        </div>
+
+        <!-- Form side -->
+        <div class="auth-form">
+            <h1 class="auth-title">Log in</h1>
+            <p class="auth-sub">New here? <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Create an account</a></p>
+
             <form id="account" method="post">
-                <h2>Use a local account to log in.</h2>
-                <hr />
-                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label asp-for="Input.Email" class="form-label">Email</label>
-                    <span asp-validation-for="Input.Email" class="text-danger"></span>
+                <div asp-validation-summary="ModelOnly" class="auth-validation" role="alert"></div>
+
+                <div class="af-field">
+                    <label asp-for="Input.Email" class="af-label">Email</label>
+                    <input asp-for="Input.Email" class="af-input" autocomplete="username" aria-required="true" placeholder="you@example.com" />
+                    <span asp-validation-for="Input.Email" class="af-error"></span>
                 </div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label asp-for="Input.Password" class="form-label">Password</label>
-                    <span asp-validation-for="Input.Password" class="text-danger"></span>
+
+                <div class="af-field">
+                    <label asp-for="Input.Password" class="af-label">Password</label>
+                    <input asp-for="Input.Password" class="af-input" autocomplete="current-password" aria-required="true" placeholder="••••••••" />
+                    <span asp-validation-for="Input.Password" class="af-error"></span>
                 </div>
-                <div class="checkbox mb-3">
-                    <label asp-for="Input.RememberMe" class="form-label">
-                        <input class="form-check-input" asp-for="Input.RememberMe" />
-                        @Html.DisplayNameFor(m => m.Input.RememberMe)
+
+                <div class="af-row">
+                    <label asp-for="Input.RememberMe" class="af-remember">
+                        <input asp-for="Input.RememberMe" />
+                        Remember me
                     </label>
+                    <a id="forgot-password" class="af-forgot" asp-page="./ForgotPassword">Forgot password?</a>
                 </div>
-                <div>
-                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <div>
-                    <p>
-                        <a id="forgot-password" asp-page="./ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a id="resend-confirmation" asp-page="./ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
-                </div>
+
+                <button id="login-submit" type="submit" class="af-submit">
+                    <i class="fas fa-sign-in-alt me-2"></i>Log in
+                </button>
             </form>
-        </section>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            @{
-                if ((Model.ExternalLogins?.Count ?? 0) == 0)
-                {
-                    <div>
-                        <p>
-                            There are no external authentication services configured. See this <a href="https://go.microsoft.com/fwlink/?LinkID=532715">article
-                            about setting up this ASP.NET application to support logging in via external services</a>.
-                        </p>
-                    </div>
-                }
-                else
-                {
-                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                        <div>
-                            <p>
-                                @foreach (var provider in Model.ExternalLogins!)
-                                {
-                                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                                }
-                            </p>
-                        </div>
-                    </form>
-                }
+
+            @if ((Model.ExternalLogins?.Count ?? 0) > 0)
+            {
+                <div class="af-divider">or</div>
+                <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                    @foreach (var provider in Model.ExternalLogins!)
+                    {
+                        <button type="submit" class="af-google" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" onerror="this.style.display='none'" />
+                            Continue with @provider.DisplayName
+                        </button>
+                    }
+                </form>
             }
-        </section>
+
+            <div class="af-foot">
+                <a id="resend-confirmation" asp-page="./ResendEmailConfirmation">Resend email confirmation</a>
+            </div>
+        </div>
+
     </div>
 </div>
 
