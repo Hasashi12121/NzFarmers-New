@@ -74,6 +74,25 @@ namespace NZFarmers.Controllers
                 .FirstOrDefaultAsync(m => m.FarmerID == id);
             if (farmer == null) return NotFound();
 
+            // Reviews for this farm, newest first.
+            var reviews = await _context.Ratings
+                .Include(r => r.User)
+                .Where(r => r.FarmerID == farmer.FarmerID)
+                .OrderByDescending(r => r.CreatedAt)
+                .AsNoTracking()
+                .ToListAsync();
+
+            ViewBag.Reviews = reviews;
+            ViewBag.AvgRating = reviews.Any() ? reviews.Average(r => r.RatingValue) : 0.0;
+
+            // Review form context for the current visitor.
+            var userId = _userManager.GetUserId(User);
+            bool isOwner = userId != null && farmer.UserID == userId;
+            ViewBag.IsOwner = isOwner;
+            ViewBag.CanReview = User.Identity?.IsAuthenticated == true && !isOwner;
+            ViewBag.MyReview = userId == null ? null
+                : reviews.FirstOrDefault(r => r.UserId == userId);
+
             return View(farmer);
         }
 
@@ -178,7 +197,7 @@ namespace NZFarmers.Controllers
             ModelState.Remove("UserID");
             ModelState.Remove("User");
 
-            if (ModelState.IsValid)qeqeq
+            if (ModelState.IsValid)
             {
                 if (farmer.ProfileImageFile != null && farmer.ProfileImageFile.Length > 0)
                 {

@@ -1,42 +1,166 @@
-﻿@model Order
+@model Order
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = $"Order #{Model.OrderID}";
+    var payment = ViewBag.Payment as NZFarmers.Models.PaymentDetail;
+    bool canManage = ViewBag.CanManage is bool b && b;
+
+    var steps = new[] { OrderStatus.Pending, OrderStatus.Processing, OrderStatus.Shipped, OrderStatus.Delivered };
+    int currentStep = Array.IndexOf(steps, Model.Status);
+    bool cancelled = Model.Status == OrderStatus.Cancelled;
 }
 
-<h1>Details</h1>
+<style>
+    .od-page { max-width: 860px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    .od-back { display: inline-flex; align-items: center; gap: .45rem; color: var(--gray-500); text-decoration: none; font-size: .9rem; font-weight: 600; margin-bottom: 1.25rem; }
+    .od-back:hover { color: var(--green-700); }
+    .od-title { font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; }
+    .od-date { color: var(--gray-500); font-size: .9rem; margin-bottom: 2rem; }
 
-<div>
-    <h4>Order</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.User)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.User.Id)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.TotalPrice)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.TotalPrice)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Status)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Status)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.CreatedAt)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.CreatedAt)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.OrderID">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    .od-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 1.5rem; margin-bottom: 1.25rem; }
+    .od-card h5 { font-weight: 800; font-size: 1rem; margin-bottom: 1.15rem; }
+
+    /* Progress tracker */
+    .tracker { display: flex; align-items: flex-start; }
+    .tracker-step { flex: 1; text-align: center; position: relative; }
+    .tracker-dot {
+        width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+        background: var(--gray-100); color: var(--gray-500); font-size: .85rem; position: relative; z-index: 2;
+        border: 2px solid var(--gray-200);
+    }
+    .tracker-step.done .tracker-dot { background: var(--green-600); border-color: var(--green-600); color: white; }
+    .tracker-step.current .tracker-dot { background: var(--green-100); border-color: var(--green-600); color: var(--green-700); }
+    .tracker-label { font-size: .78rem; font-weight: 700; margin-top: .5rem; color: var(--gray-500); }
+    .tracker-step.done .tracker-label, .tracker-step.current .tracker-label { color: var(--green-700); }
+    .tracker-step::before {
+        content: ''; position: absolute; top: 17px; left: -50%; width: 100%; height: 2px;
+        background: var(--gray-200); z-index: 1;
+    }
+    .tracker-step:first-child::before { display: none; }
+    .tracker-step.done::before, .tracker-step.current::before { background: var(--green-600); }
+
+    .cancelled-banner { background: #fee2e2; color: #991b1b; border-radius: var(--radius); padding: .9rem 1.25rem; font-weight: 700; }
+
+    .od-line { display: flex; align-items: center; gap: .9rem; padding: .7rem 0; border-bottom: 1px solid var(--gray-100); font-size: .95rem; }
+    .od-line:last-child { border-bottom: none; }
+    .od-line-img { width: 54px; height: 54px; border-radius: var(--radius); object-fit: cover; background: var(--gray-100); }
+    .od-line-img-ph { width: 54px; height: 54px; border-radius: var(--radius); background: var(--green-50); color: var(--green-600); display: flex; align-items: center; justify-content: center; }
+    .od-line-name { font-weight: 700; color: var(--gray-900); text-decoration: none; }
+    .od-line-name:hover { color: var(--green-700); }
+    .od-line-farm { font-size: .78rem; color: var(--gray-500); }
+    .od-line-qty { margin-left: auto; color: var(--gray-500); white-space: nowrap; }
+    .od-line-price { font-weight: 700; min-width: 84px; text-align: right; }
+
+    .od-total-row { display: flex; justify-content: space-between; font-weight: 800; font-size: 1.15rem; padding-top: 1rem; margin-top: .5rem; border-top: 1px solid var(--gray-200); }
+
+    .pay-row { display: flex; justify-content: space-between; font-size: .92rem; color: var(--gray-700); margin-bottom: .5rem; }
+    .pay-chip { display: inline-flex; align-items: center; gap: .35rem; background: var(--green-100); color: var(--green-800); border-radius: 50px; padding: .2rem .7rem; font-size: .78rem; font-weight: 700; }
+
+    .manage-box { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+    .status-select { border: 1px solid var(--gray-200); border-radius: 50px; padding: .45rem 1rem; font-size: .9rem; font-weight: 600; background: var(--gray-50); outline: none; }
+    .btn-update-status { background: var(--green-600); color: white; border: none; border-radius: 50px; padding: .5rem 1.25rem; font-weight: 700; font-size: .88rem; cursor: pointer; }
+    .btn-update-status:hover { background: var(--green-700); }
+</style>
+
+<div class="od-page">
+    <a class="od-back" href="javascript:history.back()"><i class="fas fa-arrow-left"></i> Back</a>
+
+    <h1 class="od-title">Order #@Model.OrderID</h1>
+    <div class="od-date">Placed @Model.CreatedAt.ToLocalTime().ToString("d MMMM yyyy 'at' h:mm tt")</div>
+
+    <!-- Status -->
+    <div class="od-card">
+        <h5><i class="fas fa-truck me-2" style="color:var(--green-600);"></i>Order Status</h5>
+        @if (cancelled)
+        {
+            <div class="cancelled-banner"><i class="fas fa-ban me-2"></i>This order was cancelled.</div>
+        }
+        else
+        {
+            <div class="tracker">
+                @for (int i = 0; i < steps.Length; i++)
+                {
+                    var cls = i < currentStep ? "done" : (i == currentStep ? "current" : "");
+                    var icon = steps[i] switch
+                    {
+                        OrderStatus.Pending => "fa-clock",
+                        OrderStatus.Processing => "fa-box-open",
+                        OrderStatus.Shipped => "fa-shipping-fast",
+                        _ => "fa-check"
+                    };
+                    <div class="tracker-step @cls">
+                        <div class="tracker-dot"><i class="fas @icon"></i></div>
+                        <div class="tracker-label">@steps[i]</div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (canManage)
+        {
+            <hr style="border-color:var(--gray-100);margin:1.25rem 0 1rem;" />
+            <div class="manage-box">
+                <span style="font-size:.82rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;">Update status:</span>
+                <form asp-action="UpdateStatus" method="post" style="display:flex;align-items:center;gap:.6rem;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="orderId" value="@Model.OrderID" />
+                    <input type="hidden" name="returnUrl" value="@Url.Action("Details", new { id = Model.OrderID })" />
+                    <select name="status" class="status-select">
+                        @foreach (OrderStatus s in Enum.GetValues(typeof(OrderStatus)))
+                        {
+                            if (s == Model.Status)
+                            {
+                                <option value="@s" selected>@s</option>
+                            }
+                            else
+                            {
+                                <option value="@s">@s</option>
+                            }
+                        }
+                    </select>
+                    <button type="submit" class="btn-update-status"><i class="fas fa-check me-1"></i>Update</button>
+                </form>
+            </div>
+        }
+    </div>
+
+    <!-- Items -->
+    <div class="od-card">
+        <h5><i class="fas fa-shopping-basket me-2" style="color:var(--green-600);"></i>Items</h5>
+        @foreach (var line in Model.OrderDetails ?? Enumerable.Empty<NZFarmers.Models.OrderDetail>())
+        {
+            <div class="od-line">
+                @if (!string.IsNullOrEmpty(line.FarmerProduct?.ImageURL))
+                {
+                    <img class="od-line-img" src="@line.FarmerProduct.ImageURL" alt="" onerror="this.outerHTML='&lt;div class=&quot;od-line-img-ph&quot;&gt;&lt;i class=&quot;fas fa-seedling&quot;&gt;&lt;/i&gt;&lt;/div&gt;'" />
+                }
+                else
+                {
+                    <div class="od-line-img-ph"><i class="fas fa-seedling"></i></div>
+                }
+                <div>
+                    <a class="od-line-name" asp-controller="FarmerProducts" asp-action="Details" asp-route-id="@line.FarmerProductID">@line.FarmerProduct?.ProductName</a>
+                    @if (line.FarmerProduct?.Farmer != null)
+                    {
+                        <div class="od-line-farm"><i class="fas fa-tractor me-1"></i>@line.FarmerProduct.Farmer.FarmName</div>
+                    }
+                </div>
+                <span class="od-line-qty">× @line.Quantity</span>
+                <span class="od-line-price">$@line.Subtotal.ToString("F2")</span>
+            </div>
+        }
+        <div class="od-total-row"><span>Total</span><span>$@Model.TotalPrice.ToString("F2") NZD</span></div>
+    </div>
+
+    <!-- Payment -->
+    @if (payment != null)
+    {
+        <div class="od-card">
+            <h5><i class="fas fa-credit-card me-2" style="color:var(--green-600);"></i>Payment</h5>
+            <div class="pay-row"><span>Status</span><span class="pay-chip"><i class="fas fa-check-circle"></i>@payment.Status</span></div>
+            <div class="pay-row"><span>Method</span><span>@payment.Method (via Stripe)</span></div>
+            <div class="pay-row"><span>Amount</span><span style="font-weight:700;">$@payment.Amount.ToString("F2") NZD</span></div>
+            <div class="pay-row"><span>Date</span><span>@payment.CreatedAt.ToLocalTime().ToString("d MMM yyyy, h:mm tt")</span></div>
+        </div>
+    }
 </div>

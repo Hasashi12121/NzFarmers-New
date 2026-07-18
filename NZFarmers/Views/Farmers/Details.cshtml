@@ -111,6 +111,149 @@
                 </div>
             </div>
 
+            @{
+                var reviews = ViewBag.Reviews as List<NZFarmers.Models.Rating> ?? new List<NZFarmers.Models.Rating>();
+                double avgRating = ViewBag.AvgRating is double avg ? avg : 0.0;
+                bool canReview = ViewBag.CanReview is bool cr && cr;
+                bool isOwner = ViewBag.IsOwner is bool io && io;
+                var myReview = ViewBag.MyReview as NZFarmers.Models.Rating;
+            }
+
+            <!-- Reviews -->
+            <div class="fd-section" id="reviews">
+                <div class="rv-head">
+                    <h2 class="rv-title"><i class="fas fa-star" style="color:#f59e0b;"></i> Reviews</h2>
+                    @if (reviews.Any())
+                    {
+                        <div class="rv-avg">
+                            <span class="rv-avg-num">@avgRating.ToString("F1")</span>
+                            <span class="rv-avg-stars">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <i class="fas fa-star @(i <= Math.Round(avgRating) ? "" : "rv-star-muted")"></i>
+                                }
+                            </span>
+                            <span class="rv-avg-count">(@reviews.Count review@(reviews.Count == 1 ? "" : "s"))</span>
+                        </div>
+                    }
+                </div>
+
+                @if (canReview)
+                {
+                    <form class="rv-form" asp-controller="Ratings" asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="FarmerID" value="@Model.FarmerID" />
+                        <div class="rv-form-title">@(myReview != null ? "Update your review" : "Leave a review")</div>
+                        <div class="rv-star-input">
+                            @for (int s = 5; s >= 1; s--)
+                            {
+                                <input type="radio" id="star@(s)" name="RatingValue" value="@s" @(myReview != null && myReview.RatingValue == s ? "checked" : (myReview == null && s == 5 ? "checked" : "")) />
+                                <label for="star@(s)" title="@s star@(s == 1 ? "" : "s")"><i class="fas fa-star"></i></label>
+                            }
+                        </div>
+                        <textarea name="Comment" class="rv-textarea" rows="3" maxlength="500"
+                                  placeholder="How was your experience with @Model.FarmName?">@myReview?.Comment</textarea>
+                        <button type="submit" class="rv-submit">
+                            <i class="fas fa-paper-plane"></i> @(myReview != null ? "Update Review" : "Post Review")
+                        </button>
+                    </form>
+                }
+                else if (isOwner)
+                {
+                    <p class="rv-note"><i class="fas fa-info-circle me-1"></i>This is your farm — reviews from your customers will appear here.</p>
+                }
+                else if (User.Identity?.IsAuthenticated != true)
+                {
+                    <p class="rv-note">
+                        <a href="/Identity/Account/Login">Sign in</a> to leave a review.
+                    </p>
+                }
+
+                @if (!reviews.Any())
+                {
+                    <div class="rv-empty">
+                        <i class="far fa-comment-dots"></i>
+                        <p>No reviews yet — be the first to share your experience.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="rv-list">
+                        @foreach (var review in reviews)
+                        {
+                            <div class="rv-item">
+                                <div class="rv-item-avatar">@((review.User?.Email ?? "?").Substring(0, 1).ToUpper())</div>
+                                <div class="rv-item-body">
+                                    <div class="rv-item-top">
+                                        <span class="rv-item-name">@(review.User?.Email ?? "Customer")</span>
+                                        <span class="rv-item-stars">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <i class="fas fa-star @(i <= review.RatingValue ? "" : "rv-star-muted")"></i>
+                                            }
+                                        </span>
+                                        <span class="rv-item-date">@review.CreatedAt.ToLocalTime().ToString("d MMM yyyy")</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(review.Comment))
+                                    {
+                                        <p class="rv-item-comment">@review.Comment</p>
+                                    }
+                                    @if (User.IsInRole("Admin") || (myReview != null && review.RatingID == myReview.RatingID))
+                                    {
+                                        <div class="rv-item-actions">
+                                            <a asp-controller="Ratings" asp-action="Delete" asp-route-id="@review.RatingID"><i class="fas fa-trash-alt me-1"></i>Delete</a>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <style>
+                .rv-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin-bottom: 1.25rem; }
+                .rv-title { font-size: 1.15rem; font-weight: 800; margin: 0; }
+                .rv-avg { display: flex; align-items: center; gap: .5rem; }
+                .rv-avg-num { font-weight: 800; font-size: 1.15rem; }
+                .rv-avg-stars { color: #f59e0b; font-size: .9rem; }
+                .rv-star-muted { color: #e5e7eb !important; }
+                .rv-avg-count { color: #6b7280; font-size: .85rem; }
+
+                .rv-form { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; }
+                .rv-form-title { font-weight: 700; font-size: .95rem; margin-bottom: .6rem; }
+                .rv-star-input { display: inline-flex; flex-direction: row-reverse; gap: .2rem; margin-bottom: .75rem; }
+                .rv-star-input input { display: none; }
+                .rv-star-input label { cursor: pointer; font-size: 1.45rem; color: #e5e7eb; transition: color .1s, transform .1s; }
+                .rv-star-input label:hover { transform: scale(1.15); }
+                .rv-star-input input:checked ~ label,
+                .rv-star-input label:hover,
+                .rv-star-input label:hover ~ label { color: #f59e0b; }
+                .rv-textarea { width: 100%; border: 1.5px solid #d1d5db; border-radius: 8px; padding: .7rem 1rem; font-size: .92rem; font-family: inherit; resize: vertical; outline: none; transition: border-color .15s, box-shadow .15s; }
+                .rv-textarea:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.12); }
+                .rv-submit { margin-top: .75rem; background: #16a34a; color: #fff; border: none; border-radius: 50px; padding: .6rem 1.5rem; font-weight: 700; font-size: .9rem; cursor: pointer; display: inline-flex; align-items: center; gap: .5rem; transition: background .15s; }
+                .rv-submit:hover { background: #15803d; }
+                .rv-note { color: #6b7280; font-size: .9rem; background: #f9fafb; border-radius: 8px; padding: .85rem 1rem; }
+                .rv-note a { color: #16a34a; font-weight: 700; }
+
+                .rv-empty { text-align: center; color: #9ca3af; padding: 2rem 1rem; }
+                .rv-empty i { font-size: 2rem; margin-bottom: .5rem; display: block; }
+
+                .rv-list { display: flex; flex-direction: column; gap: 1.1rem; }
+                .rv-item { display: flex; gap: .9rem; }
+                .rv-item-avatar { width: 42px; height: 42px; border-radius: 50%; background: #dcfce7; color: #15803d; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+                .rv-item-body { flex: 1; border-bottom: 1px solid #f3f4f6; padding-bottom: 1rem; }
+                .rv-item:last-child .rv-item-body { border-bottom: none; padding-bottom: 0; }
+                .rv-item-top { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+                .rv-item-name { font-weight: 700; font-size: .9rem; }
+                .rv-item-stars { color: #f59e0b; font-size: .78rem; }
+                .rv-item-date { color: #9ca3af; font-size: .78rem; margin-left: auto; }
+                .rv-item-comment { color: #374151; font-size: .9rem; line-height: 1.6; margin: .4rem 0 0; }
+                .rv-item-actions { margin-top: .4rem; }
+                .rv-item-actions a { color: #dc2626; font-size: .78rem; font-weight: 600; text-decoration: none; }
+                .rv-item-actions a:hover { color: #991b1b; }
+            </style>
+
         </main>
 
         <!-- RIGHT: sidebar -->

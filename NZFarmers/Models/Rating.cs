@@ -27,9 +27,9 @@ namespace NZFarmers.Models
         [ForeignKey("FarmerID")]
         public virtual Farmers Farmer { get; set; } = default!;
 
-        // The numeric rating value, constrained between 1 and 5
+        // The numeric rating value, constrained between 1 and 5 stars
         [Required(ErrorMessage = "Rating is required.")]
-        [Range(1, 10, ErrorMessage = "Rating must be between 1 and 10.")]
+        [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5.")]
         public int RatingValue { get; set; }
 
         // Optional comment provided by the user

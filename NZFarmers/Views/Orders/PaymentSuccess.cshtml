@@ -1,7 +1,65 @@
-﻿@{
-    ViewData["Title"] = "Payment Successful";
+@model Order
+
+@{
+    ViewData["Title"] = "Order Confirmed";
 }
 
-<h2>Payment Successful</h2>
-<p>Your payment has been received and your order is now being processed.</p>
-<a asp-action="MyOrders" class="btn btn-primary">View My Orders</a>
+<style>
+    .ps-page { max-width: 640px; margin: 0 auto; padding: 3rem 1rem 4rem; text-align: center; }
+    .ps-icon {
+        width: 96px; height: 96px; border-radius: 50%; background: var(--green-100);
+        color: var(--green-600); font-size: 2.6rem; display: inline-flex;
+        align-items: center; justify-content: center; margin-bottom: 1.5rem;
+        animation: pop .4s ease-out;
+    }
+    @@keyframes pop { 0% { transform: scale(.4); opacity: 0; } 80% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+    .ps-title { font-size: 2rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: .5rem; }
+    .ps-sub { color: var(--gray-500); margin-bottom: 2rem; }
+
+    .ps-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 1.5rem; text-align: left; margin-bottom: 2rem; }
+    .ps-line { display: flex; align-items: center; gap: .75rem; padding: .55rem 0; border-bottom: 1px solid var(--gray-100); font-size: .92rem; }
+    .ps-line:last-of-type { border-bottom: none; }
+    .ps-line-name { font-weight: 600; }
+    .ps-line-farm { font-size: .78rem; color: var(--gray-500); }
+    .ps-line-qty { margin-left: auto; color: var(--gray-500); }
+    .ps-line-price { font-weight: 700; min-width: 78px; text-align: right; }
+    .ps-total { display: flex; justify-content: space-between; font-weight: 800; font-size: 1.1rem; padding-top: .9rem; margin-top: .4rem; border-top: 1px solid var(--gray-200); }
+
+    .ps-actions { display: flex; gap: .9rem; justify-content: center; flex-wrap: wrap; }
+    .btn-primary-pill { display: inline-flex; align-items: center; gap: .5rem; background: var(--green-600); color: white; text-decoration: none; border-radius: 50px; padding: .8rem 1.9rem; font-weight: 700; transition: background .15s; }
+    .btn-primary-pill:hover { background: var(--green-700); color: white; }
+    .btn-outline-pill { display: inline-flex; align-items: center; gap: .5rem; background: var(--white); color: var(--gray-700); text-decoration: none; border: 1px solid var(--gray-200); border-radius: 50px; padding: .8rem 1.9rem; font-weight: 700; transition: background .15s; }
+    .btn-outline-pill:hover { background: var(--gray-100); color: var(--gray-900); }
+</style>
+
+<div class="ps-page">
+    <div class="ps-icon"><i class="fas fa-check"></i></div>
+    <h1 class="ps-title">Order confirmed!</h1>
+    <p class="ps-sub">
+        Thanks for supporting local farmers. Your payment was received and
+        <strong>Order #@Model.OrderID</strong> is now being prepared.
+    </p>
+
+    <div class="ps-card">
+        @foreach (var line in Model.OrderDetails ?? Enumerable.Empty<NZFarmers.Models.OrderDetail>())
+        {
+            <div class="ps-line">
+                <div>
+                    <div class="ps-line-name">@line.FarmerProduct?.ProductName</div>
+                    @if (line.FarmerProduct?.Farmer != null)
+                    {
+                        <div class="ps-line-farm"><i class="fas fa-tractor me-1"></i>@line.FarmerProduct.Farmer.FarmName</div>
+                    }
+                </div>
+                <span class="ps-line-qty">× @line.Quantity</span>
+                <span class="ps-line-price">$@line.Subtotal.ToString("F2")</span>
+            </div>
+        }
+        <div class="ps-total"><span>Total paid</span><span>$@Model.TotalPrice.ToString("F2") NZD</span></div>
+    </div>
+
+    <div class="ps-actions">
+        <a class="btn-primary-pill" asp-action="MyOrders"><i class="fas fa-receipt"></i> View My Orders</a>
+        <a class="btn-outline-pill" asp-controller="FarmerProducts" asp-action="Index"><i class="fas fa-seedling"></i> Keep Shopping</a>
+    </div>
+</div>

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,9 @@ using NZFarmers.Models;
 
 namespace NZFarmers.Controllers
 {
+    // Raw order-detail records are admin-only; buyers and farmers see their
+    // orders through OrdersController which enforces ownership.
+    [Authorize(Roles = "Admin")]
     public class OrderDetailsController : Controller
     {
         private readonly NZFarmersContext _context;

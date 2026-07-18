@@ -1,15 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using NZFarmers.Areas.Identity.Data;
 using NZFarmers.Data;
 using NZFarmers.Models;
+using Stripe.Checkout;
 
 namespace NZFarmers.Controllers
 {
@@ -26,159 +26,168 @@ namespace NZFarmers.Controllers
         }
 
         // GET: Orders
+        // Admins see every order on the platform; everyone else goes to their own order history.
         public async Task<IActionResult> Index()
         {
-            var nZFarmersContext = _context.Orders.Include(o => o.User);
-            return View(await nZFarmersContext.ToListAsync());
-        }
+            if (!User.IsInRole("Admin"))
+                return RedirectToAction(nameof(MyOrders));
 
-        // GET: Orders/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var order = await _context.Orders
+            var orders = await _context.Orders
                 .Include(o => o.User)
-                .FirstOrDefaultAsync(m => m.OrderID == id);
-            if (order == null)
-            {
-                return NotFound();
-            }
+                .Include(o => o.OrderDetails!)
+                    .ThenInclude(od => od.FarmerProduct)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
 
-            return View(order);
+            return View(orders);
         }
 
-        // GET: Orders/Create
-        public IActionResult Create()
-        {
-            ViewData["Status"] = new SelectList(Enum.GetValues(typeof(OrderStatus)));
-            return View();
-        }
-
-        // POST: Orders/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("TotalPrice,Status")] Order order)
-        {
-            if (!ModelState.IsValid)
-            {
-                // Get current user ID
-                var userId = _userManager.GetUserId(User);
-                order.UserID = userId!;
-                order.CreatedAt = DateTime.UtcNow;
-
-                _context.Add(order);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-
-            ViewData["Status"] = new SelectList(Enum.GetValues(typeof(OrderStatus)), order.Status);
-            return View(order);
-        }
-
-
-        // GET: Orders/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null)
-            {
-                return NotFound();
-            }
-            return View(order);
-        }
-
-        // POST: Orders/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("OrderID,TotalPrice,Status,CreatedAt")] Order order)
-        {
-            if (id != order.OrderID) return NotFound();
-
-            if (!ModelState.IsValid)
-            {
-                try
-                {
-                    var userId = _userManager.GetUserId(User);
-                    order.UserID = userId!;
-                    _context.Update(order);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!OrderExists(order.OrderID)) return NotFound();
-                    throw;
-                }
-                return RedirectToAction(nameof(Index));
-            }
-
-            return View(order);
-        }
-
-
-        // GET: Orders/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var order = await _context.Orders
-                .Include(o => o.User)
-                .FirstOrDefaultAsync(m => m.OrderID == id);
-            if (order == null)
-            {
-                return NotFound();
-            }
-
-            return View(order);
-        }
-
-        // POST: Orders/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var order = await _context.Orders.FindAsync(id);
-            if (order != null)
-            {
-                _context.Orders.Remove(order);
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-        [HttpGet]
-        public async Task<IActionResult> PaymentSuccess()
+        // GET: Orders/MyOrders
+        // The logged-in user's own purchase history.
+        public async Task<IActionResult> MyOrders()
         {
             var userId = _userManager.GetUserId(User);
             if (string.IsNullOrEmpty(userId))
                 return Challenge();
 
-            // Retrieve the user's shopping cart items
+            var orders = await _context.Orders
+                .Include(o => o.OrderDetails!)
+                    .ThenInclude(od => od.FarmerProduct)
+                        .ThenInclude(fp => fp.Farmer)
+                .Where(o => o.UserID == userId)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
+
+            return View(orders);
+        }
+
+        // GET: Orders/Selling
+        // Farmer dashboard: every order that contains at least one of this farmer's products.
+        [Authorize(Roles = "Farmer,Admin")]
+        public async Task<IActionResult> Selling()
+        {
+            var userId = _userManager.GetUserId(User);
+            var farmer = await _context.Farmers.FirstOrDefaultAsync(f => f.UserID == userId);
+
+            if (farmer == null)
+            {
+                TempData["Error"] = "Create your farmer profile first to see your sales.";
+                return RedirectToAction("Create", "Farmers");
+            }
+
+            var orders = await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderDetails!)
+                    .ThenInclude(od => od.FarmerProduct)
+                .Where(o => o.OrderDetails!.Any(od => od.FarmerProduct.FarmerID == farmer.FarmerID))
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
+
+            ViewBag.FarmerID = farmer.FarmerID;
+            ViewBag.FarmName = farmer.FarmName;
+            return View(orders);
+        }
+
+        // GET: Orders/Details/5
+        // Visible to: the buyer, an admin, or a farmer who has products in the order.
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var order = await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderDetails!)
+                    .ThenInclude(od => od.FarmerProduct)
+                        .ThenInclude(fp => fp.Farmer)
+                .FirstOrDefaultAsync(m => m.OrderID == id);
+
+            if (order == null) return NotFound();
+
+            if (!await CanViewOrderAsync(order))
+                return Forbid();
+
+            var payment = await _context.PaymentDetails.FirstOrDefaultAsync(p => p.OrderID == order.OrderID);
+            ViewBag.Payment = payment;
+            ViewBag.CanManage = await CanManageOrderAsync(order);
+
+            return View(order);
+        }
+
+        // POST: Orders/UpdateStatus
+        // Farmers (with products in the order) and admins can move an order through its lifecycle.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Farmer,Admin")]
+        public async Task<IActionResult> UpdateStatus(int orderId, OrderStatus status, string? returnUrl)
+        {
+            var order = await _context.Orders
+                .Include(o => o.OrderDetails!)
+                    .ThenInclude(od => od.FarmerProduct)
+                .FirstOrDefaultAsync(o => o.OrderID == orderId);
+
+            if (order == null) return NotFound();
+
+            if (!await CanManageOrderAsync(order))
+                return Forbid();
+
+            order.Status = status;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"Order #{order.OrderID} marked as {status}.";
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+
+            return RedirectToAction(nameof(Selling));
+        }
+
+        // GET: Orders/PaymentSuccess?session_id=...
+        // Stripe redirects here after a successful payment. We verify the session was
+        // actually paid before creating the order, so nobody can fake a purchase by
+        // visiting this URL directly.
+        [HttpGet]
+        public async Task<IActionResult> PaymentSuccess(string? session_id)
+        {
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrEmpty(userId))
+                return Challenge();
+
             var cartItems = await _context.ShoppingCartItems
                 .Include(ci => ci.FarmerProduct)
                 .Where(ci => ci.UserID == userId)
                 .ToListAsync();
 
+            // Cart already cleared (e.g. page refresh after order creation).
             if (!cartItems.Any())
-                return RedirectToAction("Index", "ShoppingCartItems");
+                return RedirectToAction(nameof(MyOrders));
 
-            // Calculate total
+            // Verify the Stripe checkout session really was paid.
+            if (string.IsNullOrEmpty(session_id))
+            {
+                TempData["Error"] = "We couldn't verify your payment. Please try again.";
+                return RedirectToAction("Index", "ShoppingCartItems");
+            }
+
+            Session stripeSession;
+            try
+            {
+                var sessionService = new SessionService();
+                stripeSession = await sessionService.GetAsync(session_id);
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "We couldn't verify your payment. Please try again.";
+                return RedirectToAction("Index", "ShoppingCartItems");
+            }
+
+            if (stripeSession.PaymentStatus != "paid")
+            {
+                TempData["Error"] = "Your payment was not completed.";
+                return RedirectToAction(nameof(PaymentCanceled));
+            }
+
             decimal totalPrice = cartItems.Sum(item => item.Quantity * item.FarmerProduct.Price);
 
-            // Create new Order
             var order = new Order
             {
                 UserID = userId,
@@ -188,40 +197,81 @@ namespace NZFarmers.Controllers
             };
 
             _context.Orders.Add(order);
-            await _context.SaveChangesAsync(); // So we get the OrderID for foreign key
+            await _context.SaveChangesAsync(); // Generates OrderID for the foreign keys below.
 
-            // Create OrderDetails
             foreach (var item in cartItems)
             {
-                var orderDetail = new OrderDetail
+                _context.OrderDetails.Add(new OrderDetail
                 {
                     OrderID = order.OrderID,
                     FarmerProductID = item.FarmerProductID,
                     Quantity = item.Quantity,
                     Subtotal = item.Quantity * item.FarmerProduct.Price
-                };
-                _context.OrderDetails.Add(orderDetail);
+                });
+
+                // Reduce stock, never below zero.
+                item.FarmerProduct.Stock = Math.Max(0, item.FarmerProduct.Stock - item.Quantity);
             }
 
-            // Clear cart
-            _context.ShoppingCartItems.RemoveRange(cartItems);
+            // Record the payment against the order.
+            _context.PaymentDetails.Add(new PaymentDetail
+            {
+                UserID = userId,
+                OrderID = order.OrderID,
+                Amount = totalPrice,
+                Status = PaymentStatus.Completed,
+                Method = PaymentMethod.CreditCard,
+                CreatedAt = DateTime.UtcNow
+            });
 
+            _context.ShoppingCartItems.RemoveRange(cartItems);
             await _context.SaveChangesAsync();
 
-            return View(); // Optionally pass `order` to the view
-        }
+            // Reload with details for the confirmation page.
+            var confirmedOrder = await _context.Orders
+                .Include(o => o.OrderDetails!)
+                    .ThenInclude(od => od.FarmerProduct)
+                        .ThenInclude(fp => fp.Farmer)
+                .FirstAsync(o => o.OrderID == order.OrderID);
 
+            return View(confirmedOrder);
+        }
 
         // GET: Orders/PaymentCanceled
         [HttpGet]
         public IActionResult PaymentCanceled()
         {
-            // Inform the user that the payment was canceled and perhaps offer to try again.
             return View();
         }
-        private bool OrderExists(int id)
+
+        // ── Helpers ──────────────────────────────────────────────────────────
+
+        private async Task<bool> CanViewOrderAsync(Order order)
         {
-            return _context.Orders.Any(e => e.OrderID == id);
+            var userId = _userManager.GetUserId(User);
+
+            if (User.IsInRole("Admin")) return true;
+            if (order.UserID == userId) return true;
+
+            return await IsSellingFarmerAsync(order);
+        }
+
+        private async Task<bool> CanManageOrderAsync(Order order)
+        {
+            if (User.IsInRole("Admin")) return true;
+            if (!User.IsInRole("Farmer")) return false;
+
+            return await IsSellingFarmerAsync(order);
+        }
+
+        private async Task<bool> IsSellingFarmerAsync(Order order)
+        {
+            var userId = _userManager.GetUserId(User);
+            var farmer = await _context.Farmers.FirstOrDefaultAsync(f => f.UserID == userId);
+            if (farmer == null) return false;
+
+            return order.OrderDetails != null &&
+                   order.OrderDetails.Any(od => od.FarmerProduct != null && od.FarmerProduct.FarmerID == farmer.FarmerID);
         }
     }
 }

@@ -1,65 +1,57 @@
-﻿@model NZFarmers.Models.Rating
+@model NZFarmers.Models.Rating
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Edit Review";
 }
 
-<h1>Edit</h1>
+<style>
+    .re-page { max-width: 560px; margin: 0 auto; padding: 3rem 1rem 4rem; }
+    .re-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 2rem; }
+    .re-title { font-size: 1.5rem; font-weight: 800; margin-bottom: .25rem; }
+    .re-sub { color: var(--gray-500); font-size: .9rem; margin-bottom: 1.5rem; }
+    .re-star-input { display: inline-flex; flex-direction: row-reverse; gap: .25rem; margin-bottom: 1rem; }
+    .re-star-input input { display: none; }
+    .re-star-input label { cursor: pointer; font-size: 1.8rem; color: var(--gray-200); transition: color .1s, transform .1s; }
+    .re-star-input label:hover { transform: scale(1.15); }
+    .re-star-input input:checked ~ label,
+    .re-star-input label:hover,
+    .re-star-input label:hover ~ label { color: #f59e0b; }
+    .re-textarea { width: 100%; border: 1.5px solid var(--gray-200); border-radius: 8px; padding: .75rem 1rem; font-size: .95rem; font-family: inherit; resize: vertical; outline: none; }
+    .re-textarea:focus { border-color: var(--green-600); box-shadow: 0 0 0 3px rgba(22,163,74,.12); }
+    .re-actions { display: flex; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+    .re-submit { background: var(--green-600); color: white; border: none; border-radius: 50px; padding: .7rem 1.75rem; font-weight: 700; cursor: pointer; }
+    .re-submit:hover { background: var(--green-700); }
+    .re-cancel { color: var(--gray-500); text-decoration: none; font-weight: 600; font-size: .9rem; }
+    .re-cancel:hover { color: var(--gray-700); }
+</style>
 
-<h4>Rating</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<div class="re-page">
+    <div class="re-card">
+        <h1 class="re-title">Edit your review</h1>
+        <p class="re-sub">Reviewing <strong>@Model.Farmer?.FarmName</strong></p>
 
-            <!-- Hidden field for the primary key -->
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
             <input type="hidden" asp-for="RatingID" />
 
-            <!-- User dropdown -->
-            <div class="form-group">
-                <label asp-for="UserId" class="control-label">User</label>
-                <select asp-for="UserId" class="form-control" asp-items="ViewBag.UserId"></select>
-                <span asp-validation-for="UserId" class="text-danger"></span>
+            <div class="re-star-input">
+                @for (int s = 5; s >= 1; s--)
+                {
+                    <input type="radio" id="reStar@(s)" name="RatingValue" value="@s" @(Model.RatingValue == s ? "checked" : "") />
+                    <label for="reStar@(s)" title="@s star@(s == 1 ? "" : "s")"><i class="fas fa-star"></i></label>
+                }
             </div>
 
-            <!-- Farmer dropdown -->
-            <div class="form-group">
-                <label asp-for="FarmerID" class="control-label">Farmer</label>
-                <select asp-for="FarmerID" class="form-control" asp-items="ViewBag.FarmerID"></select>
-                <span asp-validation-for="FarmerID" class="text-danger"></span>
-            </div>
+            <textarea name="Comment" class="re-textarea" rows="4" maxlength="500"
+                      placeholder="Share your experience…">@Model.Comment</textarea>
 
-            <!-- Rating Value -->
-            <div class="form-group">
-                <label asp-for="RatingValue" class="control-label"></label>
-                <input asp-for="RatingValue" class="form-control" />
-                <span asp-validation-for="RatingValue" class="text-danger"></span>
-            </div>
-
-            <!-- Comment -->
-            <div class="form-group">
-                <label asp-for="Comment" class="control-label"></label>
-                <input asp-for="Comment" class="form-control" />
-                <span asp-validation-for="Comment" class="text-danger"></span>
-            </div>
-
-            <!-- Created At -->
-            <div class="form-group">
-                <label asp-for="CreatedAt" class="control-label"></label>
-                <input asp-for="CreatedAt" class="form-control" />
-                <span asp-validation-for="CreatedAt" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
+            <div class="re-actions">
+                <button type="submit" class="re-submit"><i class="fas fa-save me-1"></i> Save Changes</button>
+                <a class="re-cancel" asp-controller="Farmers" asp-action="Details" asp-route-id="@Model.FarmerID">Cancel</a>
             </div>
         </form>
     </div>
-</div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
 </div>
 
 @section Scripts {

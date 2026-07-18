@@ -102,6 +102,27 @@ namespace NZFarmers.Controllers
             if (farmerProduct == null)
                 return NotFound();
 
+            // Related products from the same category (excluding this one)
+            ViewBag.RelatedProducts = await _context.FarmerProducts
+                .Include(p => p.Farmer)
+                .Where(p => p.Category == farmerProduct.Category && p.FarmerProductID != farmerProduct.FarmerProductID)
+                .OrderBy(p => Guid.NewGuid())
+                .Take(4)
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Farmer's overall rating for the trust card
+            var ratings = await _context.Ratings
+                .Where(r => r.FarmerID == farmerProduct.FarmerID)
+                .Select(r => r.RatingValue)
+                .ToListAsync();
+            ViewBag.FarmerAvgRating = ratings.Any() ? ratings.Average() : 0.0;
+            ViewBag.FarmerRatingCount = ratings.Count;
+
+            // Whether the current user may edit this product
+            ViewBag.CanManage = User.Identity != null && User.Identity.IsAuthenticated
+                && await CanManageProductAsync(farmerProduct);
+
             return View(farmerProduct);
         }
 
@@ -207,7 +228,7 @@ namespace NZFarmers.Controllers
         [Authorize(Roles = "Admin,Farmer")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("FarmerProductID,FarmerID,ProductName,Description,Category,Price,Stock,ImageURL")] FarmerProduct farmerProduct)
+        public async Task<IActionResult> Edit(int id, [Bind("FarmerProductID,FarmerID,ProductName,Description,Category,Price,Stock,ImageURL,ImageFile")] FarmerProduct farmerProduct)
         {
             if (id != farmerProduct.FarmerProductID)
                 return NotFound();
@@ -229,6 +250,25 @@ namespace NZFarmers.Controllers
 
             if (ModelState.IsValid)
             {
+                // Handle a replacement image upload; otherwise keep the existing one.
+                if (farmerProduct.ImageFile != null)
+                {
+                    string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
+                    Directory.CreateDirectory(uploadsFolder);
+                    string uniqueFileName = Guid.NewGuid().ToString()
+                        + "_" + Path.GetFileName(farmerProduct.ImageFile.FileName);
+                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await farmerProduct.ImageFile.CopyToAsync(fileStream);
+                    }
+                    farmerProduct.ImageURL = "/uploads/" + uniqueFileName;
+                }
+                else if (string.IsNullOrEmpty(farmerProduct.ImageURL))
+                {
+                    farmerProduct.ImageURL = original.ImageURL;
+                }
+
                 try
                 {
                     _context.Update(farmerProduct);

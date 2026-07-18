@@ -1,48 +1,91 @@
-﻿@model NZFarmers.Models.FarmerMarketEvent
+@model NZFarmers.Models.FarmerMarketEvent
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = Model.Title;
+    bool upcoming = Model.Date >= DateTime.Now;
 }
 
-<h1>Details</h1>
+<style>
+    .ev-page { max-width: 760px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    .ev-back { display: inline-flex; align-items: center; gap: .45rem; color: var(--gray-500); text-decoration: none; font-size: .9rem; font-weight: 600; margin-bottom: 1.5rem; }
+    .ev-back:hover { color: var(--green-700); }
 
-<div>
-    <h4>FarmerMarketEvent</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Title)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Title)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Location)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Location)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Date)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Date)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Description)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.CreatedAt)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.CreatedAt)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.EventID">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    .ev-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+    .ev-banner {
+        background: linear-gradient(135deg, var(--green-700), var(--green-500));
+        color: white; padding: 2.5rem 2rem;
+    }
+    .ev-status { display: inline-flex; align-items: center; gap: .4rem; background: rgba(255,255,255,.2); border-radius: 50px; padding: .3rem .9rem; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+    .ev-title { font-size: 2rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
+
+    .ev-body { padding: 2rem; }
+    .ev-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.75rem; }
+    .ev-meta-item { display: flex; align-items: center; gap: .8rem; background: var(--gray-50); border: 1px solid var(--gray-100); border-radius: var(--radius); padding: .9rem 1.1rem; }
+    .ev-meta-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--green-100); color: var(--green-700); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ev-meta-label { font-size: .72rem; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: .06em; }
+    .ev-meta-val { font-weight: 700; font-size: .95rem; }
+
+    .ev-desc-title { font-size: 1.05rem; font-weight: 800; margin-bottom: .6rem; }
+    .ev-desc { color: var(--gray-700); line-height: 1.75; white-space: pre-line; }
+
+    .ev-admin { display: flex; gap: .75rem; margin-top: 1.75rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-100); }
+    .ev-btn { display: inline-flex; align-items: center; gap: .45rem; border-radius: 50px; padding: .55rem 1.25rem; font-weight: 700; font-size: .88rem; text-decoration: none; }
+    .ev-btn.edit { background: var(--gray-100); color: var(--gray-700); }
+    .ev-btn.edit:hover { background: var(--gray-200); }
+    .ev-btn.delete { background: #fee2e2; color: #991b1b; }
+    .ev-btn.delete:hover { background: #fecaca; }
+</style>
+
+<div class="ev-page">
+    <a class="ev-back" asp-action="Index"><i class="fas fa-arrow-left"></i> All market events</a>
+
+    <div class="ev-card">
+        <div class="ev-banner">
+            <span class="ev-status">
+                <i class="fas @(upcoming ? "fa-calendar-check" : "fa-history")"></i>
+                @(upcoming ? "Upcoming Event" : "Past Event")
+            </span>
+            <h1 class="ev-title">@Model.Title</h1>
+        </div>
+
+        <div class="ev-body">
+            <div class="ev-meta">
+                <div class="ev-meta-item">
+                    <div class="ev-meta-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <div>
+                        <div class="ev-meta-label">Date</div>
+                        <div class="ev-meta-val">@Model.Date.ToString("dddd, d MMMM yyyy")</div>
+                    </div>
+                </div>
+                <div class="ev-meta-item">
+                    <div class="ev-meta-icon"><i class="fas fa-clock"></i></div>
+                    <div>
+                        <div class="ev-meta-label">Time</div>
+                        <div class="ev-meta-val">@Model.Date.ToString("h:mm tt")</div>
+                    </div>
+                </div>
+                <div class="ev-meta-item">
+                    <div class="ev-meta-icon"><i class="fas fa-map-marker-alt"></i></div>
+                    <div>
+                        <div class="ev-meta-label">Location</div>
+                        <div class="ev-meta-val">@Model.Location</div>
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <div class="ev-desc-title">About this event</div>
+                <p class="ev-desc">@Model.Description</p>
+            }
+
+            @if (User.IsInRole("Admin"))
+            {
+                <div class="ev-admin">
+                    <a class="ev-btn edit" asp-action="Edit" asp-route-id="@Model.EventID"><i class="fas fa-pen"></i> Edit</a>
+                    <a class="ev-btn delete" asp-action="Delete" asp-route-id="@Model.EventID"><i class="fas fa-trash-alt"></i> Delete</a>
+                </div>
+            }
+        </div>
+    </div>
 </div>

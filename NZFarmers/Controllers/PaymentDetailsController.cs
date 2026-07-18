@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -11,6 +12,9 @@ using NZFarmers.Models;
 
 namespace NZFarmers.Controllers
 {
+    // Payment records contain sensitive data — admin-only. Buyers see their own
+    // payment info on the order details page instead.
+    [Authorize(Roles = "Admin")]
     public class PaymentDetailsController : Controller
     {
         private readonly NZFarmersContext _context;

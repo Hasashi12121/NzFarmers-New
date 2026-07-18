@@ -1,53 +1,261 @@
-﻿@model NZFarmers.Models.FarmerProduct
+@model NZFarmers.Models.FarmerProduct
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = Model.ProductName;
+    var related = ViewBag.RelatedProducts as List<NZFarmers.Models.FarmerProduct> ?? new List<NZFarmers.Models.FarmerProduct>();
+    double avgRating = ViewBag.FarmerAvgRating is double d ? d : 0.0;
+    int ratingCount = ViewBag.FarmerRatingCount is int c ? c : 0;
+    bool canManage = ViewBag.CanManage is bool m && m;
+    bool inStock = Model.Stock > 0;
+    bool lowStock = inStock && Model.Stock <= 5;
 }
 
-<h1>Details</h1>
+<style>
+    .pd-page { max-width: 1140px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    .pd-breadcrumb { font-size: .85rem; color: var(--gray-500); margin-bottom: 1.5rem; }
+    .pd-breadcrumb a { color: var(--gray-500); text-decoration: none; }
+    .pd-breadcrumb a:hover { color: var(--green-700); }
+    .pd-breadcrumb i { font-size: .7rem; margin: 0 .4rem; }
 
-<div>
-    <h4>FarmerProduct</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Farmer)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Farmer.Address)
-        </dd>
+    /* Image */
+    .pd-img-wrap {
+        background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
+        overflow: hidden; box-shadow: var(--shadow-sm); position: relative;
+    }
+    .pd-img { width: 100%; height: 460px; object-fit: cover; display: block; }
+    .pd-img-ph { width: 100%; height: 460px; background: var(--green-50); color: var(--green-600); display: flex; align-items: center; justify-content: center; font-size: 4.5rem; }
+    .pd-cat-chip {
+        position: absolute; top: 1rem; left: 1rem;
+        background: rgba(255,255,255,.95); color: var(--green-700);
+        border-radius: 50px; padding: .4rem 1rem; font-size: .8rem; font-weight: 700;
+        box-shadow: var(--shadow);
+    }
 
-        <!-- Replace old Product references with your FarmerProduct property -->
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.ProductName)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.ProductName)
-        </dd>
+    /* Info panel */
+    .pd-info { padding-left: .5rem; }
+    .pd-name { font-size: 2rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; margin-bottom: .75rem; }
+    .pd-price { font-size: 2.1rem; font-weight: 800; color: var(--green-700); margin-bottom: .35rem; }
+    .pd-price small { font-size: 1rem; color: var(--gray-500); font-weight: 500; }
+    .stock-chip { display: inline-flex; align-items: center; gap: .4rem; border-radius: 50px; padding: .35rem .9rem; font-size: .82rem; font-weight: 700; margin-bottom: 1.25rem; }
+    .stock-in  { background: var(--green-100); color: var(--green-800); }
+    .stock-low { background: #fef3c7; color: #92400e; }
+    .stock-out { background: #fee2e2; color: #991b1b; }
 
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Price)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Price)
-        </dd>
+    .pd-desc { color: var(--gray-700); line-height: 1.7; margin-bottom: 1.5rem; }
 
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Stock)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Stock)
-        </dd>
+    .buy-box { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 1.4rem; box-shadow: var(--shadow-sm); margin-bottom: 1.25rem; }
+    .buy-row { display: flex; align-items: center; gap: 1rem; }
+    .qty-stepper { display: flex; align-items: center; border: 1px solid var(--gray-200); border-radius: 50px; overflow: hidden; background: var(--gray-50); }
+    .qty-stepper button { border: none; background: transparent; width: 38px; height: 42px; cursor: pointer; color: var(--gray-700); }
+    .qty-stepper button:hover { background: var(--green-100); color: var(--green-700); }
+    .qty-stepper input { width: 52px; border: none; background: transparent; text-align: center; font-weight: 700; font-size: 1rem; outline: none; -moz-appearance: textfield; }
+    .qty-stepper input::-webkit-outer-spin-button, .qty-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .btn-add-cart {
+        flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
+        background: var(--green-600); color: white; border: none; border-radius: 50px;
+        padding: .85rem 1.5rem; font-weight: 700; font-size: 1.02rem; cursor: pointer;
+        transition: background .15s, transform .15s; box-shadow: 0 2px 8px rgba(22,163,74,.35);
+    }
+    .btn-add-cart:hover:not(:disabled) { background: var(--green-700); transform: translateY(-1px); }
+    .btn-add-cart:disabled { background: var(--gray-200); color: var(--gray-500); cursor: not-allowed; box-shadow: none; }
 
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.ImageURL)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.ImageURL)
-        </dd>
-    </dl>
+    /* Farmer card */
+    .farmer-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 1.4rem; box-shadow: var(--shadow-sm); }
+    .farmer-card-head { display: flex; align-items: center; gap: 1rem; }
+    .farmer-avatar { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; background: var(--green-100); }
+    .farmer-avatar-ph { width: 58px; height: 58px; border-radius: 50%; background: var(--green-100); color: var(--green-700); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .farmer-name { font-weight: 800; font-size: 1.05rem; color: var(--gray-900); text-decoration: none; }
+    .farmer-name:hover { color: var(--green-700); }
+    .farmer-loc { font-size: .82rem; color: var(--gray-500); }
+    .farmer-stars { color: #f59e0b; font-size: .85rem; margin-top: .2rem; }
+    .farmer-stars .muted { color: var(--gray-200); }
+    .farmer-stars span { color: var(--gray-500); font-size: .78rem; margin-left: .3rem; }
+    .btn-view-farm { display: inline-flex; align-items: center; gap: .45rem; margin-top: 1rem; width: 100%; justify-content: center; border: 1px solid var(--green-600); color: var(--green-700); border-radius: 50px; padding: .6rem; font-weight: 700; font-size: .9rem; text-decoration: none; transition: background .15s; }
+    .btn-view-farm:hover { background: var(--green-50); color: var(--green-800); }
+
+    .manage-strip { display: flex; gap: .75rem; margin-top: 1.25rem; }
+    .btn-manage { display: inline-flex; align-items: center; gap: .45rem; border-radius: 50px; padding: .55rem 1.25rem; font-weight: 700; font-size: .88rem; text-decoration: none; }
+    .btn-manage.edit { background: var(--gray-100); color: var(--gray-700); }
+    .btn-manage.edit:hover { background: var(--gray-200); }
+    .btn-manage.delete { background: #fee2e2; color: #991b1b; }
+    .btn-manage.delete:hover { background: #fecaca; }
+
+    /* Related */
+    .related-title { font-size: 1.35rem; font-weight: 800; margin: 3rem 0 1.25rem; letter-spacing: -.02em; }
+    .rel-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); transition: transform .15s, box-shadow .15s; height: 100%; display: flex; flex-direction: column; }
+    .rel-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+    .rel-img { width: 100%; height: 150px; object-fit: cover; background: var(--gray-100); }
+    .rel-img-ph { width: 100%; height: 150px; background: var(--green-50); color: var(--green-600); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; }
+    .rel-body { padding: .9rem 1rem 1.1rem; flex: 1; display: flex; flex-direction: column; }
+    .rel-name { font-weight: 700; font-size: .95rem; color: var(--gray-900); text-decoration: none; }
+    .rel-name:hover { color: var(--green-700); }
+    .rel-farm { font-size: .75rem; color: var(--gray-500); margin-top: .15rem; }
+    .rel-price { font-weight: 800; color: var(--green-700); margin-top: auto; padding-top: .5rem; }
+
+    @@media (max-width: 991px) {
+        .pd-img, .pd-img-ph { height: 320px; }
+        .pd-info { padding-left: 0; margin-top: 1.5rem; }
+    }
+</style>
+
+<div class="pd-page">
+    <!-- Breadcrumb -->
+    <div class="pd-breadcrumb">
+        <a asp-action="Index">Browse</a><i class="fas fa-chevron-right"></i>
+        <a asp-action="Index" asp-route-categoryFilter="@Model.Category">@Model.Category</a><i class="fas fa-chevron-right"></i>
+        <span style="color:var(--gray-900);font-weight:600;">@Model.ProductName</span>
+    </div>
+
+    <div class="row g-4">
+        <!-- Image -->
+        <div class="col-lg-7">
+            <div class="pd-img-wrap">
+                <div class="pd-cat-chip"><i class="fas fa-tag me-1"></i>@Model.Category</div>
+                @if (!string.IsNullOrEmpty(Model.ImageURL))
+                {
+                    <img class="pd-img" src="@Model.ImageURL" alt="@Model.ProductName" onerror="this.outerHTML='&lt;div class=&quot;pd-img-ph&quot;&gt;&lt;i class=&quot;fas fa-seedling&quot;&gt;&lt;/i&gt;&lt;/div&gt;'" />
+                }
+                else
+                {
+                    <div class="pd-img-ph"><i class="fas fa-seedling"></i></div>
+                }
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="col-lg-5">
+            <div class="pd-info">
+                <h1 class="pd-name">@Model.ProductName</h1>
+                <div class="pd-price">$@Model.Price.ToString("F2") <small>NZD</small></div>
+
+                @if (!inStock)
+                {
+                    <span class="stock-chip stock-out"><i class="fas fa-times-circle"></i> Out of stock</span>
+                }
+                else if (lowStock)
+                {
+                    <span class="stock-chip stock-low"><i class="fas fa-exclamation-circle"></i> Only @Model.Stock left</span>
+                }
+                else
+                {
+                    <span class="stock-chip stock-in"><i class="fas fa-check-circle"></i> @Model.Stock in stock</span>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <p class="pd-desc">@Model.Description</p>
+                }
+
+                <!-- Buy box -->
+                <div class="buy-box">
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form asp-controller="ShoppingCartItems" asp-action="AddToCart" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="farmerProductId" value="@Model.FarmerProductID" />
+                            <input type="hidden" name="returnUrl" value="@Url.Action("Details", new { id = Model.FarmerProductID })" />
+                            <div class="buy-row">
+                                <div class="qty-stepper">
+                                    <button type="button" onclick="stepQty(-1)"><i class="fas fa-minus"></i></button>
+                                    <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="@Model.Stock" @(inStock ? "" : "disabled") />
+                                    <button type="button" onclick="stepQty(1)"><i class="fas fa-plus"></i></button>
+                                </div>
+                                <button type="submit" class="btn-add-cart" @(inStock ? "" : "disabled")>
+                                    <i class="fas fa-cart-plus"></i> @(inStock ? "Add to Cart" : "Out of Stock")
+                                </button>
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <a class="btn-add-cart" style="text-decoration:none;" href="/Identity/Account/Login?returnUrl=@Url.Action("Details", new { id = Model.FarmerProductID })">
+                            <i class="fas fa-sign-in-alt"></i> Sign in to buy
+                        </a>
+                    }
+                </div>
+
+                <!-- Farmer card -->
+                @if (Model.Farmer != null)
+                {
+                    <div class="farmer-card">
+                        <div class="farmer-card-head">
+                            @if (!string.IsNullOrEmpty(Model.Farmer.ProfileImage))
+                            {
+                                <img class="farmer-avatar" src="@Model.Farmer.ProfileImage" alt="@Model.Farmer.FarmName" onerror="this.outerHTML='&lt;div class=&quot;farmer-avatar-ph&quot;&gt;&lt;i class=&quot;fas fa-tractor&quot;&gt;&lt;/i&gt;&lt;/div&gt;'" />
+                            }
+                            else
+                            {
+                                <div class="farmer-avatar-ph"><i class="fas fa-tractor"></i></div>
+                            }
+                            <div>
+                                <a class="farmer-name" asp-controller="Farmers" asp-action="Details" asp-route-id="@Model.Farmer.FarmerID">@Model.Farmer.FarmName</a>
+                                <div class="farmer-loc"><i class="fas fa-map-marker-alt me-1"></i>@Model.Farmer.City, @Model.Farmer.Region</div>
+                                <div class="farmer-stars">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <i class="fas fa-star @(i <= Math.Round(avgRating) ? "" : "muted")"></i>
+                                    }
+                                    <span>@(ratingCount > 0 ? $"{avgRating:F1} ({ratingCount} review{(ratingCount == 1 ? "" : "s")})" : "No reviews yet")</span>
+                                </div>
+                            </div>
+                        </div>
+                        <a class="btn-view-farm" asp-controller="Farmers" asp-action="Details" asp-route-id="@Model.Farmer.FarmerID">
+                            <i class="fas fa-store"></i> Visit Farm Profile
+                        </a>
+                    </div>
+                }
+
+                @if (canManage)
+                {
+                    <div class="manage-strip">
+                        <a class="btn-manage edit" asp-action="Edit" asp-route-id="@Model.FarmerProductID"><i class="fas fa-pen"></i> Edit</a>
+                        <a class="btn-manage delete" asp-action="Delete" asp-route-id="@Model.FarmerProductID"><i class="fas fa-trash-alt"></i> Delete</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Related products -->
+    @if (related.Any())
+    {
+        <h2 class="related-title">More @Model.Category from our farmers</h2>
+        <div class="row g-3">
+            @foreach (var rp in related)
+            {
+                <div class="col-6 col-md-3">
+                    <div class="rel-card">
+                        @if (!string.IsNullOrEmpty(rp.ImageURL))
+                        {
+                            <img class="rel-img" src="@rp.ImageURL" alt="@rp.ProductName" onerror="this.outerHTML='&lt;div class=&quot;rel-img-ph&quot;&gt;&lt;i class=&quot;fas fa-seedling&quot;&gt;&lt;/i&gt;&lt;/div&gt;'" />
+                        }
+                        else
+                        {
+                            <div class="rel-img-ph"><i class="fas fa-seedling"></i></div>
+                        }
+                        <div class="rel-body">
+                            <a class="rel-name" asp-action="Details" asp-route-id="@rp.FarmerProductID">@rp.ProductName</a>
+                            @if (rp.Farmer != null)
+                            {
+                                <div class="rel-farm"><i class="fas fa-tractor me-1"></i>@rp.Farmer.FarmName</div>
+                            }
+                            <div class="rel-price">$@rp.Price.ToString("F2")</div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model.FarmerProductID">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+@section Scripts {
+    <script>
+        function stepQty(delta) {
+            const input = document.getElementById('qtyInput');
+            if (!input || input.disabled) return;
+            const max = parseInt(input.max) || 999;
+            let val = (parseInt(input.value) || 1) + delta;
+            input.value = Math.min(max, Math.max(1, val));
+        }
+    </script>
+}

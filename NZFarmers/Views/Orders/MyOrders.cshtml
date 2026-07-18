@@ -1,0 +1,127 @@
+@model IEnumerable<Order>
+
+@{
+    ViewData["Title"] = "My Orders";
+}
+
+<style>
+    .orders-page { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    .orders-title { font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: 2rem; }
+
+    .order-card {
+        background: var(--white); border: 1px solid var(--gray-200);
+        border-radius: var(--radius-lg); margin-bottom: 1.25rem;
+        box-shadow: var(--shadow-sm); overflow: hidden; transition: box-shadow .15s;
+    }
+    .order-card:hover { box-shadow: var(--shadow); }
+    .order-head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 1rem; flex-wrap: wrap; padding: 1rem 1.4rem;
+        background: var(--gray-50); border-bottom: 1px solid var(--gray-200);
+    }
+    .order-id { font-weight: 800; font-size: 1rem; }
+    .order-date { font-size: .82rem; color: var(--gray-500); }
+    .order-total { font-weight: 800; font-size: 1.05rem; }
+
+    .status-badge {
+        display: inline-flex; align-items: center; gap: .4rem;
+        font-size: .78rem; font-weight: 700; padding: .35rem .85rem;
+        border-radius: 50px; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .status-Pending    { background: #fef3c7; color: #92400e; }
+    .status-Processing { background: #dbeafe; color: #1e40af; }
+    .status-Shipped    { background: #e0e7ff; color: #4338ca; }
+    .status-Delivered  { background: var(--green-100); color: var(--green-800); }
+    .status-Cancelled  { background: #fee2e2; color: #991b1b; }
+
+    .order-items { padding: .75rem 1.4rem; }
+    .order-line {
+        display: flex; align-items: center; gap: .9rem;
+        padding: .6rem 0; border-bottom: 1px solid var(--gray-100);
+        font-size: .92rem;
+    }
+    .order-line:last-child { border-bottom: none; }
+    .order-line-img { width: 46px; height: 46px; border-radius: var(--radius); object-fit: cover; background: var(--gray-100); }
+    .order-line-img-ph { width: 46px; height: 46px; border-radius: var(--radius); background: var(--green-50); color: var(--green-600); display: flex; align-items: center; justify-content: center; }
+    .order-line-name { font-weight: 600; color: var(--gray-900); }
+    .order-line-farm { font-size: .78rem; color: var(--gray-500); }
+    .order-line-qty { margin-left: auto; color: var(--gray-500); white-space: nowrap; }
+    .order-line-price { font-weight: 700; min-width: 78px; text-align: right; }
+
+    .order-foot { padding: .85rem 1.4rem; border-top: 1px solid var(--gray-100); display: flex; justify-content: flex-end; }
+    .btn-view-order {
+        display: inline-flex; align-items: center; gap: .45rem;
+        color: var(--green-700); font-weight: 600; font-size: .9rem; text-decoration: none;
+    }
+    .btn-view-order:hover { color: var(--green-800); }
+
+    .orders-empty { text-align: center; padding: 5rem 1rem; background: var(--white); border: 1px dashed var(--gray-200); border-radius: var(--radius-lg); }
+    .orders-empty-icon { width: 84px; height: 84px; border-radius: 50%; background: var(--green-50); color: var(--green-600); font-size: 2rem; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; }
+    .btn-browse { display: inline-flex; align-items: center; gap: .5rem; background: var(--green-600); color: white; text-decoration: none; border-radius: 50px; padding: .75rem 1.75rem; font-weight: 700; transition: background .15s; }
+    .btn-browse:hover { background: var(--green-700); color: white; }
+</style>
+
+<div class="orders-page">
+    <h1 class="orders-title"><i class="fas fa-receipt me-2" style="color:var(--green-600);"></i>My Orders</h1>
+
+    @if (!Model.Any())
+    {
+        <div class="orders-empty">
+            <div class="orders-empty-icon"><i class="fas fa-box-open"></i></div>
+            <h4 style="font-weight:700;">No orders yet</h4>
+            <p style="color:var(--gray-500);max-width:380px;margin:0 auto 1.5rem;">
+                When you buy fresh produce from our farmers, your orders will show up here.
+            </p>
+            <a class="btn-browse" asp-controller="FarmerProducts" asp-action="Index">
+                <i class="fas fa-seedling"></i> Start Shopping
+            </a>
+        </div>
+    }
+    else
+    {
+        foreach (var order in Model)
+        {
+            <div class="order-card">
+                <div class="order-head">
+                    <div>
+                        <div class="order-id">Order #@order.OrderID</div>
+                        <div class="order-date">@order.CreatedAt.ToLocalTime().ToString("d MMMM yyyy, h:mm tt")</div>
+                    </div>
+                    <span class="status-badge status-@order.Status">@order.Status</span>
+                    <div class="order-total">$@order.TotalPrice.ToString("F2")</div>
+                </div>
+
+                <div class="order-items">
+                    @foreach (var line in order.OrderDetails ?? Enumerable.Empty<NZFarmers.Models.OrderDetail>())
+                    {
+                        <div class="order-line">
+                            @if (!string.IsNullOrEmpty(line.FarmerProduct?.ImageURL))
+                            {
+                                <img class="order-line-img" src="@line.FarmerProduct.ImageURL" alt="" onerror="this.outerHTML='&lt;div class=&quot;order-line-img-ph&quot;&gt;&lt;i class=&quot;fas fa-seedling&quot;&gt;&lt;/i&gt;&lt;/div&gt;'" />
+                            }
+                            else
+                            {
+                                <div class="order-line-img-ph"><i class="fas fa-seedling"></i></div>
+                            }
+                            <div>
+                                <div class="order-line-name">@line.FarmerProduct?.ProductName</div>
+                                @if (line.FarmerProduct?.Farmer != null)
+                                {
+                                    <div class="order-line-farm"><i class="fas fa-tractor me-1"></i>@line.FarmerProduct.Farmer.FarmName</div>
+                                }
+                            </div>
+                            <span class="order-line-qty">× @line.Quantity</span>
+                            <span class="order-line-price">$@line.Subtotal.ToString("F2")</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="order-foot">
+                    <a class="btn-view-order" asp-action="Details" asp-route-id="@order.OrderID">
+                        View details <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        }
+    }
+</div>

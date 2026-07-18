@@ -1,3 +1,20 @@
+@using Microsoft.AspNetCore.Identity
+@using NZFarmers.Areas.Identity.Data
+@using NZFarmers.Data
+@inject UserManager<NZFarmersUser> UserManager
+@inject NZFarmersContext DbContext
+@{
+    int cartCount = 0;
+    bool isFarmer = false;
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        var currentUserId = UserManager.GetUserId(User);
+        cartCount = DbContext.ShoppingCartItems
+            .Where(c => c.UserID == currentUserId)
+            .Sum(c => (int?)c.Quantity) ?? 0;
+        isFarmer = User.IsInRole("Farmer") || User.IsInRole("Admin");
+    }
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -406,7 +423,11 @@
                             <a asp-controller="EducationalContents" asp-action="Index"><i class="fas fa-graduation-cap"></i> Learn Farming</a>
                             <a asp-controller="Ratings" asp-action="Index"><i class="fas fa-star"></i> Reviews</a>
                             <hr />
-                            <a asp-controller="Orders" asp-action="Index"><i class="fas fa-receipt"></i> My Orders</a>
+                            <a asp-controller="Orders" asp-action="MyOrders"><i class="fas fa-receipt"></i> My Orders</a>
+                            @if (isFarmer)
+                            {
+                                <a asp-controller="Orders" asp-action="Selling"><i class="fas fa-store"></i> Sales Dashboard</a>
+                            }
                             <a asp-controller="Home" asp-action="Privacy"><i class="fas fa-shield-alt"></i> Privacy</a>
                         </div>
                     </li>
@@ -414,7 +435,10 @@
                         <a class="btn-cart" asp-controller="ShoppingCartItems" asp-action="Index">
                             <i class="fas fa-shopping-cart"></i>
                             Cart
-                            <span class="cart-count" id="cartCount">0</span>
+                            @if (cartCount > 0)
+                            {
+                                <span class="cart-count" id="cartCount">@cartCount</span>
+                            }
                         </a>
                     </li>
                     <li>
@@ -500,7 +524,7 @@
                         <li><a asp-controller="Farmers" asp-action="Index">Our Farmers</a></li>
                         <li><a asp-controller="FarmerProducts" asp-action="Create">List a Product</a></li>
                         <li><a asp-controller="ShoppingCartItems" asp-action="Index">Shopping Cart</a></li>
-                        <li><a asp-controller="Orders" asp-action="Index">My Orders</a></li>
+                        <li><a asp-controller="Orders" asp-action="MyOrders">My Orders</a></li>
                     </ul>
                 </div>
 
