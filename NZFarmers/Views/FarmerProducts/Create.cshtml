@@ -1,0 +1,470 @@
+@model NZFarmers.Models.FarmerProduct
+@{
+    ViewData["Title"] = "List a Product";
+    bool isAdmin = User.IsInRole("Admin");
+}
+
+<div class="cp-page">
+    <div class="cp-container">
+
+        <!-- Header -->
+        <div class="cp-header">
+            <a asp-action="Index" class="cp-back"><i class="fas fa-arrow-left"></i> Back to listings</a>
+            <h1 class="cp-title">List a Product</h1>
+            <p class="cp-subtitle">Fill in the details below to list your product on the marketplace.</p>
+        </div>
+
+        <div class="cp-layout">
+            <!-- Form -->
+            <div class="cp-form-card">
+                <form asp-action="Create" enctype="multipart/form-data" method="post" id="createForm">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Validation summary - shows what's failing -->
+                    <div asp-validation-summary="ModelOnly" class="cp-validation-errors"></div>
+
+                    @if (isAdmin)
+                    {
+                        <!-- Admin: choose which farmer -->
+                        <div class="cp-field">
+                            <label asp-for="FarmerID" class="cp-label">
+                                <i class="fas fa-tractor"></i> Assign to Farmer
+                            </label>
+                            <select asp-for="FarmerID" class="cp-select" asp-items="@(ViewData["FarmerID"] as SelectList)">
+                                <option value="">-- Select a farmer --</option>
+                            </select>
+                            <span asp-validation-for="FarmerID" class="cp-error"></span>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Farmer: hidden field, show read-only name -->
+                        <input type="hidden" asp-for="FarmerID" />
+                        <div class="cp-field">
+                            <label class="cp-label"><i class="fas fa-tractor"></i> Farm</label>
+                            <div class="cp-readonly">@ViewData["FarmerName"]</div>
+                        </div>
+                    }
+
+                    <div class="cp-field">
+                        <label asp-for="ProductName" class="cp-label">
+                            <i class="fas fa-tag"></i> Product Name <span class="cp-required">*</span>
+                        </label>
+                        <input asp-for="ProductName" class="cp-input" placeholder="e.g. Organic Carrots, Free-Range Eggs…" />
+                        <span asp-validation-for="ProductName" class="cp-error"></span>
+                    </div>
+
+                    <div class="cp-field">
+                        <label asp-for="Description" class="cp-label">
+                            <i class="fas fa-align-left"></i> Description
+                        </label>
+                        <textarea asp-for="Description" class="cp-input cp-textarea"
+                                  placeholder="Describe your product — freshness, growing method, origin…" rows="4"></textarea>
+                        <span asp-validation-for="Description" class="cp-error"></span>
+                    </div>
+
+                    <div class="cp-row">
+                        <div class="cp-field">
+                            <label asp-for="Category" class="cp-label">
+                                <i class="fas fa-layer-group"></i> Category <span class="cp-required">*</span>
+                            </label>
+                            <select asp-for="Category" class="cp-select" asp-items="@(ViewData["Category"] as SelectList)">
+                            </select>
+                            <span asp-validation-for="Category" class="cp-error"></span>
+                        </div>
+
+                        <div class="cp-field">
+                            <label asp-for="Price" class="cp-label">
+                                <i class="fas fa-dollar-sign"></i> Price (NZD) <span class="cp-required">*</span>
+                            </label>
+                            <div class="cp-price-wrap">
+                                <span class="cp-price-prefix">$</span>
+                                <input asp-for="Price" class="cp-input cp-price-input" placeholder="0.00" step="0.01" min="0.01" />
+                            </div>
+                            <span asp-validation-for="Price" class="cp-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="cp-field">
+                        <label asp-for="Stock" class="cp-label">
+                            <i class="fas fa-boxes"></i> Stock Quantity <span class="cp-required">*</span>
+                        </label>
+                        <input asp-for="Stock" class="cp-input" placeholder="e.g. 50" min="0" type="number" />
+                        <span asp-validation-for="Stock" class="cp-error"></span>
+                    </div>
+
+                    <!-- Image upload -->
+                    <div class="cp-field">
+                        <label class="cp-label">
+                            <i class="fas fa-image"></i> Product Photo
+                        </label>
+                        <label class="cp-upload-zone" id="uploadZone">
+                            <input type="file" name="ImageFile" id="ImageFile" accept="image/*"
+                                   class="cp-upload-input" onchange="previewImage(event)" />
+                            <div class="cp-upload-placeholder" id="uploadPlaceholder">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span class="cp-upload-text">Click to upload or drag &amp; drop</span>
+                                <span class="cp-upload-hint">PNG, JPG, WEBP — max 10MB</span>
+                            </div>
+                            <img id="imagePreview" class="cp-image-preview" style="display:none;" alt="Preview" />
+                        </label>
+                        <p class="cp-upload-name" id="uploadFileName"></p>
+                    </div>
+
+                    <div class="cp-actions">
+                        <button type="submit" class="cp-submit">
+                            <i class="fas fa-plus-circle"></i> List Product
+                        </button>
+                        <a asp-action="Index" class="cp-cancel">Cancel</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tips sidebar -->
+            <aside class="cp-tips">
+                <h3 class="cp-tips-title"><i class="fas fa-lightbulb"></i> Listing tips</h3>
+                <ul class="cp-tips-list">
+                    <li>Use a clear, descriptive product name</li>
+                    <li>Add a photo — listings with photos get 3× more views</li>
+                    <li>Describe freshness, growing method, or origin</li>
+                    <li>Set a fair price — check similar listings for reference</li>
+                    <li>Keep stock accurate so buyers aren't disappointed</li>
+                </ul>
+            </aside>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function previewImage(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const preview = document.getElementById('imagePreview');
+        const placeholder = document.getElementById('uploadPlaceholder');
+        const fileNameEl = document.getElementById('uploadFileName');
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+        fileNameEl.textContent = '📎 ' + file.name;
+    }
+</script>
+
+<style>
+    .cp-page {
+        background: #f3f4f6;
+        min-height: 100vh;
+        padding: 2.5rem 0 4rem;
+        width: 100vw;
+        margin-left: calc(-50vw + 50%);
+    }
+
+    .cp-container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .cp-header { margin-bottom: 2rem; }
+
+    .cp-back {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        color: #6b7280;
+        text-decoration: none;
+        font-size: .85rem;
+        margin-bottom: 1rem;
+    }
+
+    .cp-back:hover { color: #374151; text-decoration: none; }
+
+    .cp-title {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #111827;
+        margin: 0 0 .35rem;
+    }
+
+    .cp-subtitle {
+        color: #6b7280;
+        font-size: .95rem;
+        margin: 0;
+    }
+
+    /* Layout */
+    .cp-layout {
+        display: grid;
+        grid-template-columns: 1fr 260px;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    /* Form card */
+    .cp-form-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 2rem;
+    }
+
+    .cp-validation-errors {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        color: #b91c1c;
+        padding: 1rem 1.25rem;
+        font-size: .875rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .cp-validation-errors:empty { display: none; }
+
+    .cp-field {
+        margin-bottom: 1.35rem;
+    }
+
+    .cp-label {
+        display: block;
+        font-size: .875rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: .45rem;
+    }
+
+    .cp-label i { color: #16a34a; margin-right: .35rem; }
+    .cp-required { color: #dc2626; }
+
+    .cp-input, .cp-select {
+        width: 100%;
+        border: 1.5px solid #d1d5db;
+        border-radius: 8px;
+        padding: .7rem 1rem;
+        font-size: .95rem;
+        color: #111827;
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+        background: #fff;
+        font-family: inherit;
+    }
+
+    .cp-input:focus, .cp-select:focus {
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22,163,74,.12);
+    }
+
+    .cp-textarea { resize: vertical; min-height: 100px; }
+
+    .cp-readonly {
+        padding: .7rem 1rem;
+        background: #f9fafb;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: .95rem;
+        color: #374151;
+        font-weight: 500;
+    }
+
+    .cp-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    /* Price */
+    .cp-price-wrap {
+        display: flex;
+        border: 1.5px solid #d1d5db;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .cp-price-wrap:focus-within {
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22,163,74,.12);
+    }
+
+    .cp-price-prefix {
+        background: #f3f4f6;
+        color: #6b7280;
+        font-weight: 700;
+        padding: .7rem .9rem;
+        font-size: .95rem;
+        border-right: 1.5px solid #d1d5db;
+        display: flex;
+        align-items: center;
+    }
+
+    .cp-price-input {
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        flex: 1;
+    }
+
+    .cp-price-input:focus { box-shadow: none !important; }
+
+    /* Upload zone */
+    .cp-upload-zone {
+        display: block;
+        border: 2px dashed #d1d5db;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color .2s, background .2s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cp-upload-zone:hover {
+        border-color: #16a34a;
+        background: #f0fdf4;
+    }
+
+    .cp-upload-input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+    }
+
+    .cp-upload-placeholder i {
+        font-size: 2.5rem;
+        color: #9ca3af;
+        display: block;
+        margin-bottom: .75rem;
+    }
+
+    .cp-upload-text {
+        display: block;
+        font-size: .95rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: .25rem;
+    }
+
+    .cp-upload-hint {
+        font-size: .78rem;
+        color: #9ca3af;
+    }
+
+    .cp-image-preview {
+        width: 100%;
+        max-height: 240px;
+        object-fit: cover;
+        border-radius: 8px;
+        display: block;
+    }
+
+    .cp-upload-name {
+        margin: .5rem 0 0;
+        font-size: .82rem;
+        color: #6b7280;
+    }
+
+    .cp-error {
+        display: block;
+        color: #dc2626;
+        font-size: .8rem;
+        margin-top: .3rem;
+    }
+
+    /* Actions */
+    .cp-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #f3f4f6;
+    }
+
+    .cp-submit {
+        background: #16a34a;
+        color: #fff;
+        border: none;
+        padding: .85rem 2rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        transition: background .15s, transform .1s;
+    }
+
+    .cp-submit:hover { background: #15803d; transform: translateY(-1px); }
+
+    .cp-cancel {
+        color: #6b7280;
+        text-decoration: none;
+        font-size: .9rem;
+        font-weight: 500;
+    }
+
+    .cp-cancel:hover { color: #374151; text-decoration: none; }
+
+    /* Tips sidebar */
+    .cp-tips {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        position: sticky;
+        top: 1.5rem;
+    }
+
+    .cp-tips-title {
+        font-size: .95rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 1rem;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+
+    .cp-tips-title i { color: #f59e0b; }
+
+    .cp-tips-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: .75rem;
+    }
+
+    .cp-tips-list li {
+        font-size: .82rem;
+        color: #6b7280;
+        padding-left: 1.2rem;
+        position: relative;
+        line-height: 1.45;
+    }
+
+    .cp-tips-list li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: #16a34a;
+        font-weight: 700;
+    }
+
+    @@media (max-width: 768px) {
+        .cp-layout { grid-template-columns: 1fr; }
+        .cp-tips { position: static; }
+        .cp-row { grid-template-columns: 1fr; }
+    }
+</style>

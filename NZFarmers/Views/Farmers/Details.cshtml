@@ -1,0 +1,506 @@
+@model NZFarmers.Models.Farmers
+@{
+    ViewData["Title"] = Model.FarmName;
+}
+
+<div class="fd-page">
+
+    <!-- Breadcrumb -->
+    <div class="fd-breadcrumb">
+        <div class="fd-container">
+            <nav class="breadcrumb-nav" aria-label="breadcrumb">
+                <a asp-controller="Home" asp-action="Index">Home</a>
+                <span class="bc-sep"><i class="fas fa-chevron-right"></i></span>
+                <a asp-controller="Farmers" asp-action="Index">Farmers</a>
+                <span class="bc-sep"><i class="fas fa-chevron-right"></i></span>
+                <span class="bc-current">@Model.FarmName</span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Hero banner -->
+    <div class="fd-hero">
+        @if (!string.IsNullOrEmpty(Model.ProfileImage))
+        {
+            <img src="@Model.ProfileImage" alt="@Model.FarmName" class="fd-hero-img" />
+        }
+        else
+        {
+            <div class="fd-hero-placeholder">
+                <span class="hero-placeholder-icon">🌿</span>
+            </div>
+        }
+    </div>
+
+    <!-- Main layout -->
+    <div class="fd-container fd-layout">
+
+        <!-- LEFT: main content -->
+        <main class="fd-main">
+
+            <div class="fd-title-block">
+                <div class="fd-title-top">
+                    <span class="fd-badge">
+                        <i class="fas fa-check-circle"></i> Verified Farm
+                    </span>
+                    @if (User.IsInRole("Admin") || User.IsInRole("Farmer"))
+                    {
+                        <div class="fd-admin-actions">
+                            <a asp-action="Edit" asp-route-id="@Model.FarmerID" class="fd-action-link">
+                                <i class="fas fa-pencil-alt"></i> Edit
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@Model.FarmerID" class="fd-action-link fd-action-danger">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </div>
+                    }
+                </div>
+                <h1 class="fd-farm-name">@Model.FarmName</h1>
+                <p class="fd-location">
+                    <i class="fas fa-map-marker-alt"></i>
+                    @Model.City, @Model.Region@(!string.IsNullOrEmpty(Model.ZipCode) ? $" {Model.ZipCode}" : "")
+                </p>
+            </div>
+
+            <!-- Description -->
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <div class="fd-section">
+                    <h2 class="fd-section-title">About this farm</h2>
+                    <p class="fd-description">@Model.Description</p>
+                </div>
+            }
+
+            <!-- Details table -->
+            <div class="fd-section">
+                <h2 class="fd-section-title">Farm details</h2>
+                <div class="fd-details-table">
+                    <div class="fd-detail-row">
+                        <div class="fd-detail-key"><i class="fas fa-tractor"></i> Farm Name</div>
+                        <div class="fd-detail-val">@Model.FarmName</div>
+                    </div>
+                    <div class="fd-detail-row">
+                        <div class="fd-detail-key"><i class="fas fa-city"></i> City</div>
+                        <div class="fd-detail-val">@Model.City</div>
+                    </div>
+                    <div class="fd-detail-row">
+                        <div class="fd-detail-key"><i class="fas fa-map"></i> Region</div>
+                        <div class="fd-detail-val">@Model.Region</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Address))
+                    {
+                        <div class="fd-detail-row">
+                            <div class="fd-detail-key"><i class="fas fa-home"></i> Address</div>
+                            <div class="fd-detail-val">@Model.Address</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ZipCode))
+                    {
+                        <div class="fd-detail-row">
+                            <div class="fd-detail-key"><i class="fas fa-envelope"></i> Postcode</div>
+                            <div class="fd-detail-val">@Model.ZipCode</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                    {
+                        <div class="fd-detail-row">
+                            <div class="fd-detail-key"><i class="fas fa-phone"></i> Phone</div>
+                            <div class="fd-detail-val">@Model.PhoneNumber</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </main>
+
+        <!-- RIGHT: sidebar -->
+        <aside class="fd-sidebar">
+
+            <!-- Contact card -->
+            <div class="fd-card">
+                <div class="fd-card-header">
+                    <div class="fd-farmer-avatar">
+                        @Model.FarmName.Substring(0, 1).ToUpper()
+                    </div>
+                    <div>
+                        <div class="fd-card-name">@Model.FarmName</div>
+                        <div class="fd-card-location">
+                            <i class="fas fa-map-marker-alt"></i> @Model.City, @Model.Region
+                        </div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                {
+                    <a href="tel:@Model.PhoneNumber" class="fd-contact-btn fd-contact-primary">
+                        <i class="fas fa-phone"></i> @Model.PhoneNumber
+                    </a>
+                }
+
+                <a asp-controller="FarmerProducts" asp-action="Index"
+                   asp-route-searchString="@Model.FarmName" class="fd-contact-btn fd-contact-secondary">
+                    <i class="fas fa-seedling"></i> View Products
+                </a>
+
+                <div class="fd-card-divider"></div>
+
+                <div class="fd-card-meta">
+                    <div class="fd-meta-row">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Verified NZ Farmer</span>
+                    </div>
+                    <div class="fd-meta-row">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>@Model.Region, New Zealand</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back to list -->
+            <a asp-action="Index" class="fd-back-link">
+                <i class="fas fa-arrow-left"></i> Back to all farmers
+            </a>
+
+        </aside>
+
+    </div>
+</div>
+
+<style>
+    .fd-page {
+        background: #f6f5f4;
+        min-height: 100vh;
+        width: 100vw;
+        margin-left: calc(-50vw + 50%);
+        padding-bottom: 4rem;
+    }
+
+    .fd-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* Breadcrumb */
+    .fd-breadcrumb {
+        background: #fff;
+        border-bottom: 1px solid #e5e7eb;
+        padding: .75rem 0;
+    }
+
+    .breadcrumb-nav {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-size: .82rem;
+        flex-wrap: wrap;
+    }
+
+    .breadcrumb-nav a {
+        color: #2563eb;
+        text-decoration: none;
+    }
+
+    .breadcrumb-nav a:hover { text-decoration: underline; }
+
+    .bc-sep { color: #9ca3af; font-size: .7rem; }
+    .bc-current { color: #6b7280; }
+
+    /* Hero */
+    .fd-hero {
+        background: #1a2e1a;
+        height: 380px;
+        overflow: hidden;
+    }
+
+    .fd-hero-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .fd-hero-placeholder {
+        height: 100%;
+        background: linear-gradient(135deg, #14532d 0%, #16a34a 60%, #22c55e 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hero-placeholder-icon {
+        font-size: 7rem;
+        opacity: .3;
+    }
+
+    /* Layout */
+    .fd-layout {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 2rem;
+        padding-top: 2rem;
+        align-items: start;
+    }
+
+    /* Title block */
+    .fd-title-block {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .fd-title-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .fd-badge {
+        background: #dcfce7;
+        color: #15803d;
+        font-size: .75rem;
+        font-weight: 600;
+        padding: .3rem .75rem;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+    }
+
+    .fd-admin-actions {
+        display: flex;
+        gap: .6rem;
+    }
+
+    .fd-action-link {
+        font-size: .8rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-decoration: none;
+        padding: .3rem .75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        transition: background .15s, color .15s;
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+    }
+
+    .fd-action-link:hover { background: #f3f4f6; color: #374151; text-decoration: none; }
+    .fd-action-danger { color: #dc2626; border-color: #fecaca; }
+    .fd-action-danger:hover { background: #fef2f2; color: #b91c1c; }
+
+    .fd-farm-name {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #111827;
+        margin: 0 0 .5rem;
+        letter-spacing: -.02em;
+    }
+
+    .fd-location {
+        color: #6b7280;
+        font-size: .95rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+    }
+
+    .fd-location i { color: #16a34a; }
+
+    /* Sections */
+    .fd-section {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .fd-section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 1.25rem;
+        padding-bottom: .75rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .fd-description {
+        color: #374151;
+        font-size: .95rem;
+        line-height: 1.7;
+        margin: 0;
+    }
+
+    /* Details table */
+    .fd-details-table {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .fd-detail-row {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        padding: .85rem 0;
+        border-bottom: 1px solid #f3f4f6;
+        gap: 1rem;
+    }
+
+    .fd-detail-row:last-child { border-bottom: none; }
+
+    .fd-detail-key {
+        font-size: .85rem;
+        font-weight: 600;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+
+    .fd-detail-key i { width: 14px; color: #16a34a; text-align: center; }
+
+    .fd-detail-val {
+        font-size: .9rem;
+        color: #111827;
+        font-weight: 500;
+    }
+
+    /* Sidebar */
+    .fd-sidebar {
+        position: sticky;
+        top: 1.5rem;
+    }
+
+    .fd-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+
+    .fd-card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .fd-farmer-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #16a34a, #22c55e);
+        color: white;
+        font-size: 1.4rem;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .fd-card-name {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .fd-card-location {
+        font-size: .8rem;
+        color: #6b7280;
+        margin-top: .15rem;
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+    }
+
+    .fd-contact-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        width: 100%;
+        padding: .8rem 1rem;
+        border-radius: 8px;
+        font-size: .9rem;
+        font-weight: 700;
+        text-decoration: none;
+        margin-bottom: .65rem;
+        transition: background .15s, transform .1s;
+    }
+
+    .fd-contact-btn:hover { transform: translateY(-1px); text-decoration: none; }
+
+    .fd-contact-primary {
+        background: #16a34a;
+        color: #fff;
+    }
+
+    .fd-contact-primary:hover { background: #15803d; color: #fff; }
+
+    .fd-contact-secondary {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .fd-contact-secondary:hover { background: #e5e7eb; color: #111827; }
+
+    .fd-card-divider {
+        border: none;
+        border-top: 1px solid #f3f4f6;
+        margin: 1rem 0;
+    }
+
+    .fd-card-meta {
+        display: flex;
+        flex-direction: column;
+        gap: .6rem;
+    }
+
+    .fd-meta-row {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        font-size: .82rem;
+        color: #6b7280;
+    }
+
+    .fd-meta-row i { color: #16a34a; width: 14px; text-align: center; }
+
+    /* Back link */
+    .fd-back-link {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        color: #6b7280;
+        text-decoration: none;
+        font-size: .85rem;
+        font-weight: 500;
+        padding: .6rem .75rem;
+        border-radius: 8px;
+        transition: background .15s, color .15s;
+    }
+
+    .fd-back-link:hover { background: #fff; color: #374151; text-decoration: none; }
+
+    @@media (max-width: 900px) {
+        .fd-layout {
+            grid-template-columns: 1fr;
+        }
+        .fd-sidebar { position: static; }
+        .fd-hero { height: 240px; }
+        .fd-farm-name { font-size: 1.5rem; }
+        .fd-detail-row { grid-template-columns: 130px 1fr; }
+    }
+</style>

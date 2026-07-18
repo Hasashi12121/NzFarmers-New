@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="NZFarmers - New Zealand's premier farm marketplace. Buy and sell fresh produce, livestock, equipment and more." />
+    <title>@ViewData["Title"] - NZFarmers</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <style>
+        :root {
+            --green-900: #14532d;
+            --green-800: #166534;
+            --green-700: #15803d;
+            --green-600: #16a34a;
+            --green-500: #22c55e;
+            --green-100: #dcfce7;
+            --green-50:  #f0fdf4;
+            --orange:    #f97316;
+            --orange-dark: #ea6c0d;
+            --gray-900:  #111827;
+            --gray-700:  #374151;
+            --gray-500:  #6b7280;
+            --gray-200:  #e5e7eb;
+            --gray-100:  #f3f4f6;
+            --gray-50:   #f9fafb;
+            --white:     #ffffff;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+            --shadow:    0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1);
+            --radius:    0.5rem;
+            --radius-lg: 0.75rem;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--gray-900);
+            background: var(--gray-50);
+            margin: 0;
+        }
+
+        /* ── NAVBAR ── */
+        .site-nav {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            padding: 1.35rem 0;
+        }
+
+        /* Brand */
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: .9rem;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .nav-brand-logo {
+            height: 62px;
+            width: 62px;
+            border-radius: 14px;
+            object-fit: cover;
+            box-shadow: 0 3px 12px rgba(21,128,61,.3);
+        }
+        .nav-brand-text { line-height: 1.2; }
+        .nav-brand-name {
+            display: block;
+            font-size: 1.55rem;
+            font-weight: 800;
+            color: var(--green-700);
+            letter-spacing: -.02em;
+        }
+        .nav-brand-tagline {
+            display: block;
+            font-size: .72rem;
+            color: var(--gray-500);
+            font-weight: 500;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+        }
+
+        /* Search bar */
+        .nav-search {
+            flex: 1;
+            max-width: 560px;
+        }
+        .nav-search form {
+            display: flex;
+            border: 2px solid var(--gray-200);
+            border-radius: 50px;
+            overflow: hidden;
+            transition: border-color .2s;
+            box-shadow: var(--shadow-sm);
+        }
+        .nav-search form:focus-within {
+            border-color: var(--green-600);
+            box-shadow: 0 0 0 4px rgba(34,197,94,.12);
+        }
+        .nav-search input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: .85rem 1.35rem;
+            font-size: 1rem;
+            background: transparent;
+            color: var(--gray-900);
+        }
+        .nav-search input::placeholder { color: var(--gray-500); }
+        .nav-search button {
+            background: var(--green-600);
+            border: none;
+            color: white;
+            padding: .85rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background .2s;
+        }
+        .nav-search button:hover { background: var(--green-700); }
+
+        /* Nav links */
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: .25rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            color: var(--gray-700);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            padding: .6rem .95rem;
+            border-radius: var(--radius);
+            transition: background .15s, color .15s;
+            white-space: nowrap;
+        }
+        .nav-links a:hover {
+            background: var(--green-50);
+            color: var(--green-700);
+        }
+        .nav-links a.active {
+            background: var(--green-100);
+            color: var(--green-700);
+        }
+
+        /* Cart button */
+        .btn-cart {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            background: var(--gray-100);
+            color: var(--gray-700) !important;
+            border-radius: 50px;
+            padding: .6rem 1.1rem !important;
+            font-weight: 600;
+            font-size: .95rem;
+            position: relative;
+            transition: background .15s !important;
+        }
+        .btn-cart:hover {
+            background: var(--green-100) !important;
+            color: var(--green-700) !important;
+        }
+        .cart-count {
+            background: var(--orange);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: .72rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        /* Sell button */
+        .btn-sell {
+            background: var(--orange);
+            color: white !important;
+            border-radius: 50px;
+            padding: .65rem 1.4rem !important;
+            font-weight: 700;
+            font-size: .95rem;
+            white-space: nowrap;
+            transition: background .15s, transform .15s, box-shadow .15s !important;
+            border: none;
+            box-shadow: 0 2px 8px rgba(249,115,22,.35);
+        }
+        .btn-sell:hover {
+            background: var(--orange-dark) !important;
+            color: white !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(249,115,22,.45) !important;
+        }
+
+        /* Mobile toggle */
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: .45rem .65rem;
+            cursor: pointer;
+            color: var(--gray-700);
+            font-size: 1.1rem;
+        }
+
+        /* Dropdown */
+        .nav-dropdown { position: relative; }
+        .dropdown-trigger { cursor: pointer; }
+        .nav-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + .5rem);
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            min-width: 200px;
+            padding: .4rem 0;
+            z-index: 100;
+        }
+        .nav-dropdown:hover .nav-dropdown-menu { display: block; }
+        .nav-dropdown-menu a {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .6rem 1rem;
+            color: var(--gray-700);
+            font-size: .875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background .1s;
+            border-radius: 0;
+        }
+        .nav-dropdown-menu a i { width: 16px; color: var(--green-600); }
+        .nav-dropdown-menu a:hover { background: var(--green-50); color: var(--green-700); }
+        .nav-dropdown-menu hr { margin: .3rem 0; border-color: var(--gray-200); }
+
+        /* Category bar */
+        .category-bar {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .category-bar::-webkit-scrollbar { display: none; }
+        .category-bar-inner {
+            display: flex;
+            gap: 0;
+            padding: 0 1rem;
+        }
+        .cat-link {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            color: var(--gray-600);
+            text-decoration: none;
+            font-size: .82rem;
+            font-weight: 500;
+            padding: .6rem .8rem;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            transition: color .15s, border-color .15s;
+        }
+        .cat-link:hover, .cat-link.active {
+            color: var(--green-700);
+            border-bottom-color: var(--green-600);
+        }
+
+        /* ── PAGE WRAPPER ── */
+        .page-content {
+            min-height: calc(100vh - 200px);
+        }
+
+        /* ── ALERTS ── */
+        .alert { border-radius: var(--radius); border: none; }
+        .alert-success { background: var(--green-100); color: var(--green-800); }
+        .alert-danger { background: #fee2e2; color: #991b1b; }
+
+        /* ── FOOTER ── */
+        .site-footer {
+            background: var(--gray-900);
+            color: rgba(255,255,255,.75);
+            margin-top: 5rem;
+        }
+        .footer-top { padding: 3.5rem 0 2rem; }
+        .footer-brand-name { font-size: 1.4rem; font-weight: 800; color: white; }
+        .footer-brand-tag { font-size: .75rem; color: var(--gray-500); letter-spacing: .08em; text-transform: uppercase; }
+        .footer-desc { font-size: .875rem; line-height: 1.7; margin-top: .75rem; color: rgba(255,255,255,.55); }
+        .footer-heading { font-size: .8rem; font-weight: 700; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 1rem; }
+        .footer-links { list-style: none; padding: 0; margin: 0; }
+        .footer-links li { margin-bottom: .5rem; }
+        .footer-links a { color: rgba(255,255,255,.65); text-decoration: none; font-size: .875rem; transition: color .15s; }
+        .footer-links a:hover { color: white; }
+        .footer-divider { border-color: rgba(255,255,255,.08); margin: 0; }
+        .footer-bottom { padding: 1.25rem 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; font-size: .8rem; }
+        .footer-social { display: flex; gap: .6rem; }
+        .footer-social a { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.08); color: rgba(255,255,255,.6); text-decoration: none; transition: background .15s, color .15s; }
+        .footer-social a:hover { background: var(--green-700); color: white; }
+
+        .footer-contact-badge {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-size: .8rem;
+            color: rgba(255,255,255,.55);
+        }
+        .footer-contact-badge i { color: var(--green-500); width: 14px; }
+
+        /* ── MOBILE ── */
+        @@media (max-width: 991px) {
+            .mobile-toggle { display: block; }
+            .nav-links, .nav-search, .btn-sell { display: none; }
+            .nav-links.open {
+                display: flex;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                border-bottom: 1px solid var(--gray-200);
+                padding: .75rem 1rem 1rem;
+                box-shadow: var(--shadow-lg);
+                z-index: 999;
+            }
+            .nav-links.open a { padding: .65rem .5rem; border-bottom: 1px solid var(--gray-100); }
+            .nav-links.open .btn-sell { display: flex; justify-content: center; margin-top: .5rem; }
+            .nav-inner { flex-wrap: wrap; }
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Main Navbar -->
+    <nav class="site-nav">
+        <div class="container">
+            <div class="nav-inner" style="position:relative;">
+                <!-- Brand -->
+                <a class="nav-brand" asp-controller="Home" asp-action="Index">
+                    <img src="~/uploads/Screenshot 2025-07-24 144326.png" alt="NZFarmers"
+                         class="nav-brand-logo"
+                         onerror="this.style.display='none'" />
+                    <div class="nav-brand-text">
+                        <span class="nav-brand-name">NZFarmers</span>
+                        <span class="nav-brand-tagline">Fresh &amp; Local</span>
+                    </div>
+                </a>
+
+                <!-- Search -->
+                <div class="nav-search">
+                    <form asp-controller="FarmerProducts" asp-action="Index" method="get">
+                        <input type="text" name="searchString" placeholder="Search products, farms, locations…" autocomplete="off" />
+                        <button type="submit"><i class="fas fa-search"></i></button>
+                    </form>
+                </div>
+
+                <!-- Nav Links -->
+                <ul class="nav-links" id="navLinks">
+                    <li>
+                        <a asp-controller="Home" asp-action="Index">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="FarmerProducts" asp-action="Index">
+                            <i class="fas fa-seedling"></i> Browse
+                        </a>
+                    </li>
+                    <li class="nav-dropdown">
+                        <a class="dropdown-trigger">
+                            <i class="fas fa-ellipsis-h"></i> More
+                        </a>
+                        <div class="nav-dropdown-menu">
+                            <a asp-controller="Farmers" asp-action="Index"><i class="fas fa-tractor"></i> Our Farmers</a>
+                            <a asp-controller="FarmerMarketEvents" asp-action="Index"><i class="fas fa-calendar-check"></i> Market Events</a>
+                            <a asp-controller="EducationalContents" asp-action="Index"><i class="fas fa-graduation-cap"></i> Learn Farming</a>
+                            <a asp-controller="Ratings" asp-action="Index"><i class="fas fa-star"></i> Reviews</a>
+                            <hr />
+                            <a asp-controller="Orders" asp-action="Index"><i class="fas fa-receipt"></i> My Orders</a>
+                            <a asp-controller="Home" asp-action="Privacy"><i class="fas fa-shield-alt"></i> Privacy</a>
+                        </div>
+                    </li>
+                    <li>
+                        <a class="btn-cart" asp-controller="ShoppingCartItems" asp-action="Index">
+                            <i class="fas fa-shopping-cart"></i>
+                            Cart
+                            <span class="cart-count" id="cartCount">0</span>
+                        </a>
+                    </li>
+                    <li>
+                        <partial name="_LoginPartial" />
+                    </li>
+                    <li>
+                        <a class="btn-sell" asp-controller="FarmerProducts" asp-action="Create">
+                            <i class="fas fa-plus me-1"></i> Sell
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Mobile toggle -->
+                <button class="mobile-toggle ms-auto" id="mobileToggle" aria-label="Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Category Bar -->
+        <div class="category-bar">
+            <div class="container">
+                <div class="category-bar-inner">
+                    <a class="cat-link" asp-controller="FarmerProducts" asp-action="Index"><i class="fas fa-th"></i> All</a>
+                    <a class="cat-link" asp-controller="FarmerProducts" asp-action="Index" asp-route-categoryFilter="Vegetables"><i class="fas fa-carrot"></i> Vegetables</a>
+                    <a class="cat-link" asp-controller="FarmerProducts" asp-action="Index" asp-route-categoryFilter="Fruits"><i class="fas fa-apple-alt"></i> Fruits</a>
+                    <a class="cat-link" asp-controller="FarmerProducts" asp-action="Index" asp-route-categoryFilter="Dairy"><i class="fas fa-cheese"></i> Dairy</a>
+                    <a class="cat-link" asp-controller="FarmerProducts" asp-action="Index" asp-route-categoryFilter="Meat"><i class="fas fa-drumstick-bite"></i> Meat</a>
+                    <a class="cat-link" asp-controller="FarmerProducts" asp-action="Index" asp-route-categoryFilter="Grains"><i class="fas fa-wheat-awn"></i> Grains</a>
+                    <a class="cat-link" asp-controller="FarmerProducts" asp-action="Index" asp-route-categoryFilter="Seeds"><i class="fas fa-seedling"></i> Seeds</a>
+                    <a class="cat-link" asp-controller="Farmers" asp-action="Index"><i class="fas fa-tractor"></i> Farmers</a>
+                    <a class="cat-link" asp-controller="FarmerMarketEvents" asp-action="Index"><i class="fas fa-calendar-alt"></i> Events</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success d-flex align-items-center gap-2" role="alert">
+                <i class="fas fa-check-circle"></i> @TempData["Success"]
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+                <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+            </div>
+        }
+    </div>
+
+    <!-- Page Body -->
+    <div class="page-content">
+        @RenderBody()
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container footer-top">
+            <div class="row g-4">
+                <!-- Brand -->
+                <div class="col-lg-4">
+                    <div class="footer-brand-name">NZFarmers</div>
+                    <div class="footer-brand-tag">Fresh &amp; Local Marketplace</div>
+                    <p class="footer-desc">
+                        Connecting New Zealand communities with local farmers for fresh, sustainable produce.
+                        Supporting local agriculture and bringing farm-fresh goodness to your table.
+                    </p>
+                    <div class="d-flex flex-column gap-2 mt-3">
+                        <div class="footer-contact-badge"><i class="fas fa-envelope"></i> info@nzfarmers.co.nz</div>
+                        <div class="footer-contact-badge"><i class="fas fa-phone"></i> +64 9 123 4567</div>
+                        <div class="footer-contact-badge"><i class="fas fa-map-marker-alt"></i> Auckland, New Zealand</div>
+                    </div>
+                </div>
+
+                <!-- Marketplace -->
+                <div class="col-6 col-lg-2">
+                    <div class="footer-heading">Marketplace</div>
+                    <ul class="footer-links">
+                        <li><a asp-controller="FarmerProducts" asp-action="Index">Browse Products</a></li>
+                        <li><a asp-controller="Farmers" asp-action="Index">Our Farmers</a></li>
+                        <li><a asp-controller="FarmerProducts" asp-action="Create">List a Product</a></li>
+                        <li><a asp-controller="ShoppingCartItems" asp-action="Index">Shopping Cart</a></li>
+                        <li><a asp-controller="Orders" asp-action="Index">My Orders</a></li>
+                    </ul>
+                </div>
+
+                <!-- Community -->
+                <div class="col-6 col-lg-2">
+                    <div class="footer-heading">Community</div>
+                    <ul class="footer-links">
+                        <li><a asp-controller="Ratings" asp-action="Index">Reviews &amp; Ratings</a></li>
+                        <li><a asp-controller="FarmerMarketEvents" asp-action="Index">Market Events</a></li>
+                        <li><a asp-controller="EducationalContents" asp-action="Index">Learn Farming</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="col-lg-4">
+                    <div class="footer-heading">Send Us a Message</div>
+                    <form asp-action="SendContactEmail" asp-controller="Home" method="post">
+                        <div class="mb-2">
+                            <input type="email" name="email" required class="form-control form-control-sm"
+                                   placeholder="Your email"
+                                   style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:white;border-radius:6px;">
+                        </div>
+                        <div class="mb-2">
+                            <input type="text" name="subject" required class="form-control form-control-sm"
+                                   placeholder="Subject"
+                                   style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:white;border-radius:6px;">
+                        </div>
+                        <div class="mb-2">
+                            <textarea name="message" required class="form-control form-control-sm" rows="3"
+                                      placeholder="Your message…"
+                                      style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:white;border-radius:6px;resize:none;"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-sm"
+                                style="background:var(--orange);color:white;border-radius:20px;font-weight:600;padding:.4rem 1rem;">
+                            <i class="fas fa-paper-plane me-1"></i> Send
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <hr class="footer-divider" />
+
+        <div class="container">
+            <div class="footer-bottom">
+                <span>&copy; @DateTime.Now.Year NZFarmers &mdash; All rights reserved &mdash; <a asp-controller="Home" asp-action="Privacy" style="color:rgba(255,255,255,.5);text-decoration:none;">Privacy Policy</a></span>
+                <div class="footer-social">
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Mobile menu toggle
+        const mobileToggle = document.getElementById('mobileToggle');
+        const navLinks = document.getElementById('navLinks');
+        if (mobileToggle && navLinks) {
+            mobileToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+        }
+
+        // Active nav link
+        (function() {
+            const path = window.location.pathname.toLowerCase();
+            document.querySelectorAll('.nav-links a, .cat-link').forEach(a => {
+                const href = (a.getAttribute('href') || '').toLowerCase();
+                if (href && href !== '/' && path.startsWith(href)) {
+                    a.classList.add('active');
+                }
+            });
+        })();
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

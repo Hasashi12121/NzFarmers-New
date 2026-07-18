@@ -1,0 +1,704 @@
+@model IEnumerable<NZFarmers.Models.FarmerProduct>
+
+@{
+    ViewData["Title"] = "NZFarmers — Fresh from NZ Farms";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* ── HERO ── */
+    .hero {
+        background: linear-gradient(135deg, #14532d 0%, #166534 40%, #15803d 100%);
+        color: white;
+        padding: 5rem 0 8rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url('/uploads/Background.jpeg') center/cover no-repeat;
+        opacity: .18;
+        pointer-events: none;
+    }
+    .hero-inner { position: relative; z-index: 1; }
+    .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.2);
+        border-radius: 50px;
+        padding: .35rem .9rem;
+        font-size: .8rem;
+        font-weight: 600;
+        letter-spacing: .05em;
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(4px);
+    }
+    .hero-eyebrow .dot {
+        width: 6px; height: 6px;
+        background: #4ade80;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    @@keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: .6; transform: scale(1.4); }
+    }
+    .hero h1 {
+        font-size: clamp(2.2rem, 5vw, 3.8rem);
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: -.03em;
+        margin-bottom: 1.2rem;
+    }
+    .hero h1 span { color: #4ade80; }
+    .hero-sub {
+        font-size: 1.1rem;
+        color: rgba(255,255,255,.8);
+        max-width: 520px;
+        line-height: 1.65;
+        margin-bottom: 2rem;
+    }
+    .hero-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .btn-hero-primary {
+        background: #f97316;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: .85rem 2rem;
+        font-weight: 700;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: background .2s, transform .2s, box-shadow .2s;
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+    }
+    .btn-hero-primary:hover {
+        background: #ea6c0d;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(249,115,22,.35);
+    }
+    .btn-hero-secondary {
+        background: rgba(255,255,255,.12);
+        color: white;
+        border: 1.5px solid rgba(255,255,255,.3);
+        border-radius: 50px;
+        padding: .85rem 1.75rem;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: background .2s, border-color .2s;
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        backdrop-filter: blur(4px);
+    }
+    .btn-hero-secondary:hover {
+        background: rgba(255,255,255,.22);
+        border-color: rgba(255,255,255,.5);
+        color: white;
+    }
+
+    .hero-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .75rem;
+    }
+    .hero-card {
+        background: rgba(255,255,255,.1);
+        border: 1px solid rgba(255,255,255,.15);
+        border-radius: 16px;
+        padding: 1.1rem;
+        backdrop-filter: blur(8px);
+        transition: transform .2s;
+    }
+    .hero-card:hover { transform: translateY(-4px); }
+    .hero-card:first-child { grid-column: span 2; }
+    .hero-card-emoji { font-size: 1.6rem; margin-bottom: .4rem; }
+    .hero-card-label { font-size: .78rem; color: rgba(255,255,255,.65); }
+    .hero-card-value { font-size: 1.05rem; font-weight: 700; }
+
+    /* ── STATS ── */
+    .stats-strip {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 1.75rem 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,.07);
+    }
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #15803d;
+        line-height: 1;
+        margin-bottom: .2rem;
+    }
+    .stat-label {
+        font-size: .75rem;
+        color: #6b7280;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+    }
+
+    /* ── SECTIONS ── */
+    .section { padding: 4.5rem 0; }
+    .section-tag {
+        display: inline-block;
+        background: #dcfce7;
+        color: #15803d;
+        font-size: .72rem;
+        font-weight: 700;
+        padding: .25rem .75rem;
+        border-radius: 50px;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        margin-bottom: .5rem;
+    }
+    .section-title {
+        font-size: clamp(1.5rem, 3vw, 2.2rem);
+        font-weight: 800;
+        letter-spacing: -.02em;
+        color: #111827;
+        margin: 0 0 .35rem;
+    }
+    .section-sub { color: #6b7280; font-size: .9rem; }
+
+    /* ── CATEGORY CARDS ── */
+    .category-card {
+        background: white;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 1.4rem 1rem;
+        text-align: center;
+        text-decoration: none;
+        color: #374151;
+        transition: all .2s;
+        display: block;
+    }
+    .category-card:hover {
+        border-color: #16a34a;
+        box-shadow: 0 8px 24px rgba(21,128,61,.1);
+        transform: translateY(-4px);
+        color: #15803d;
+    }
+    .category-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto .8rem;
+        font-size: 1.4rem;
+    }
+    .category-name { font-weight: 700; font-size: .875rem; }
+
+    /* ── PRODUCT CARDS ── */
+    .product-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        transition: all .25s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .product-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 20px 40px rgba(0,0,0,.1);
+        border-color: transparent;
+    }
+    .product-img-wrap {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+        background: #f3f4f6;
+    }
+    .product-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform .4s;
+    }
+    .product-card:hover .product-img-wrap img { transform: scale(1.06); }
+    .product-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        background: #f97316;
+        color: white;
+        font-size: .7rem;
+        font-weight: 700;
+        padding: .25rem .65rem;
+        border-radius: 50px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+    .product-body {
+        padding: 1.1rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .product-category {
+        font-size: .7rem;
+        font-weight: 600;
+        color: #16a34a;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        margin-bottom: .35rem;
+    }
+    .product-name {
+        font-size: .975rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: .3rem;
+        line-height: 1.35;
+    }
+    .product-farm {
+        font-size: .78rem;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+        margin-bottom: .75rem;
+    }
+    .product-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: auto;
+        padding-top: .75rem;
+        border-top: 1px solid #f3f4f6;
+    }
+    .product-price {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #15803d;
+    }
+    .product-price small { font-size: .72rem; color: #9ca3af; font-weight: 400; }
+    .btn-view {
+        background: #15803d;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: .42rem .95rem;
+        font-size: .78rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background .15s;
+        white-space: nowrap;
+    }
+    .btn-view:hover { background: #166534; color: white; }
+
+    /* ── HOW IT WORKS ── */
+    .how-section {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        padding: 5rem 0;
+    }
+    .step-card { text-align: center; padding: 1.5rem; }
+    .step-num {
+        width: 48px; height: 48px;
+        background: #15803d;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+        margin: 0 auto 1rem;
+        position: relative;
+    }
+    .step-num::after {
+        content: '';
+        position: absolute;
+        inset: -5px;
+        border-radius: 50%;
+        border: 2px dashed #86efac;
+    }
+    .step-emoji { font-size: 2.5rem; margin-bottom: .7rem; display: block; }
+    .step-title { font-weight: 700; font-size: 1.05rem; margin-bottom: .5rem; color: #111827; }
+    .step-desc { color: #6b7280; font-size: .85rem; line-height: 1.65; }
+
+    /* ── CTA ── */
+    .cta-banner {
+        background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+        border-radius: 24px;
+        padding: 3.5rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        margin: 2rem 0 5rem;
+    }
+    .cta-banner::before {
+        content: '';
+        position: absolute;
+        top: -50%; right: -10%;
+        width: 400px; height: 400px;
+        background: radial-gradient(circle, rgba(34,197,94,.15) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .cta-title {
+        font-size: clamp(1.5rem, 3vw, 2.2rem);
+        font-weight: 800;
+        letter-spacing: -.02em;
+        margin-bottom: .7rem;
+    }
+    .cta-title span { color: #4ade80; }
+    .cta-sub { color: rgba(255,255,255,.6); font-size: .9rem; margin-bottom: 1.5rem; }
+    .cta-pills { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.75rem; }
+    .cta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: rgba(255,255,255,.07);
+        border: 1px solid rgba(255,255,255,.12);
+        border-radius: 50px;
+        padding: .3rem .8rem;
+        font-size: .78rem;
+        color: rgba(255,255,255,.7);
+    }
+
+    /* ── TRUST ── */
+    .trust-bar { background: white; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; padding: 1.5rem 0; }
+    .trust-item { display: flex; align-items: center; gap: .75rem; justify-content: center; }
+    .trust-icon {
+        width: 40px; height: 40px;
+        background: #f0fdf4;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        color: #15803d; font-size: .95rem; flex-shrink: 0;
+    }
+    .trust-text strong { display: block; font-size: .85rem; font-weight: 700; color: #111827; }
+    .trust-text span { font-size: .73rem; color: #9ca3af; }
+
+    @@media (max-width: 767px) {
+        .hero { padding: 3rem 0 5.5rem; }
+        .hero-cards { display: none; }
+        .cta-banner { padding: 2rem 1.25rem; }
+        .stat-number { font-size: 1.5rem; }
+    }
+</style>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="container hero-inner">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <div class="hero-eyebrow">
+                    <span class="dot"></span>
+                    New listings added daily across NZ
+                </div>
+                <h1>
+                    New Zealand's<br>
+                    <span>Fresh Farm</span><br>
+                    Marketplace
+                </h1>
+                <p class="hero-sub">
+                    Buy directly from verified NZ farmers. No middlemen, fair prices, and produce that's actually fresh — from Northland to Southland.
+                </p>
+                <div class="hero-actions">
+                    <a href="#featured" class="btn-hero-primary">
+                        <i class="fas fa-shopping-basket"></i> Shop Now
+                    </a>
+                    <a asp-controller="Farmers" asp-action="Index" class="btn-hero-secondary">
+                        <i class="fas fa-tractor"></i> Meet Our Farmers
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-5 offset-lg-1 d-none d-lg-block">
+                <div class="hero-cards">
+                    <div class="hero-card">
+                        <div class="hero-card-emoji">🌿</div>
+                        <div class="hero-card-label">Featured Today</div>
+                        <div class="hero-card-value">Hawke's Bay Organic Honey — $12.50</div>
+                    </div>
+                    <div class="hero-card">
+                        <div class="hero-card-emoji">🥛</div>
+                        <div class="hero-card-label">Most Popular</div>
+                        <div class="hero-card-value">Dairy</div>
+                    </div>
+                    <div class="hero-card">
+                        <div class="hero-card-emoji">📍</div>
+                        <div class="hero-card-label">Coverage</div>
+                        <div class="hero-card-value">All NZ Regions</div>
+                    </div>
+                    <div class="hero-card">
+                        <div class="hero-card-emoji">⭐</div>
+                        <div class="hero-card-label">Avg Rating</div>
+                        <div class="hero-card-value">4.8 / 5.0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- STATS -->
+<div class="container" style="margin-top:-3rem;position:relative;z-index:10;">
+    <div class="stats-strip">
+        <div class="row g-3 text-center">
+            <div class="col-6 col-md-3">
+                <div class="stat-number">200+</div>
+                <div class="stat-label">Verified Farmers</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-number">1,500+</div>
+                <div class="stat-label">Active Listings</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-number">NZ Wide</div>
+                <div class="stat-label">Nationwide Reach</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-number">4.8★</div>
+                <div class="stat-label">Average Rating</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TRUST BAR -->
+<div class="trust-bar mt-5">
+    <div class="container">
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="trust-item">
+                    <div class="trust-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="trust-text">
+                        <strong>Secure Payments</strong>
+                        <span>Powered by Stripe</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="trust-item">
+                    <div class="trust-icon"><i class="fas fa-certificate"></i></div>
+                    <div class="trust-text">
+                        <strong>Verified Farmers</strong>
+                        <span>All sellers checked</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="trust-item">
+                    <div class="trust-icon"><i class="fas fa-leaf"></i></div>
+                    <div class="trust-text">
+                        <strong>100% NZ Grown</strong>
+                        <span>Local produce only</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="trust-item">
+                    <div class="trust-icon"><i class="fas fa-headset"></i></div>
+                    <div class="trust-text">
+                        <strong>NZ Support</strong>
+                        <span>Mon–Fri 8am–6pm</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CATEGORIES -->
+<section class="section">
+    <div class="container">
+        <div class="row align-items-end mb-4">
+            <div class="col">
+                <span class="section-tag">Shop by category</span>
+                <h2 class="section-title mb-0">What are you looking for?</h2>
+            </div>
+            <div class="col-auto">
+                <a asp-controller="FarmerProducts" asp-action="Index"
+                   style="color:#15803d;text-decoration:none;font-weight:600;font-size:.875rem;">
+                    All categories <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+        <div class="row g-3">
+            @{
+                var cats = new[] {
+                    new { Icon="fas fa-carrot",       Label="Vegetables", Bg="#fef3c7", Ic="#d97706", Cat="Vegetables" },
+                    new { Icon="fas fa-apple-alt",    Label="Fruits",     Bg="#fee2e2", Ic="#dc2626", Cat="Fruits"     },
+                    new { Icon="fas fa-cheese",       Label="Dairy",      Bg="#fffbeb", Ic="#b45309", Cat="Dairy"      },
+                    new { Icon="fas fa-drumstick-bite",Label="Meat",      Bg="#fce7f3", Ic="#be185d", Cat="Meat"       },
+                    new { Icon="fas fa-seedling",     Label="Seeds",      Bg="#dcfce7", Ic="#15803d", Cat="Seeds"      },
+                    new { Icon="fas fa-wheat-awn",    Label="Grains",     Bg="#fef9c3", Ic="#ca8a04", Cat="Grains"     },
+                    new { Icon="fas fa-box-open",     Label="Other",      Bg="#ede9fe", Ic="#7c3aed", Cat="Other"      },
+                    new { Icon="fas fa-tractor",      Label="All Farms",  Bg="#f0fdf4", Ic="#15803d", Cat=""           },
+                };
+            }
+            @foreach (var c in cats)
+            {
+                <div class="col-6 col-sm-4 col-md-3">
+                    <a class="category-card"
+                       asp-controller="FarmerProducts"
+                       asp-action="Index"
+                       asp-route-categoryFilter="@c.Cat">
+                        <div class="category-icon" style="background:@c.Bg;">
+                            <i class="@c.Icon" style="color:@c.Ic;"></i>
+                        </div>
+                        <div class="category-name">@c.Label</div>
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- FEATURED PRODUCTS -->
+<section class="section" id="featured" style="background:white;padding:4rem 0;">
+    <div class="container">
+        <div class="row align-items-end mb-4">
+            <div class="col">
+                <span class="section-tag">Fresh listings</span>
+                <h2 class="section-title mb-0">Featured Products</h2>
+            </div>
+            <div class="col-auto">
+                <a asp-controller="FarmerProducts" asp-action="Index"
+                   style="color:#15803d;text-decoration:none;font-weight:600;font-size:.875rem;">
+                    View all <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5">
+                <div style="font-size:4rem;margin-bottom:1rem;">🌱</div>
+                <h4 style="font-weight:700;color:#374151;">No products listed yet</h4>
+                <p style="color:#9ca3af;">Be the first farmer to list a product!</p>
+                <a asp-controller="FarmerProducts" asp-action="Create" class="btn-hero-primary mt-2">
+                    <i class="fas fa-plus"></i> List a Product
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var product in Model)
+                {
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="product-card">
+                            <div class="product-img-wrap">
+                                <img src="@(string.IsNullOrEmpty(product.ImageURL) ? "/images/default-product.jpg" : product.ImageURL)"
+                                     alt="@product.ProductName"
+                                     onerror="this.src='/images/default-product.jpg'" />
+                                <span class="product-badge">@product.Category</span>
+                            </div>
+                            <div class="product-body">
+                                <div class="product-category">@product.Category</div>
+                                <div class="product-name">@product.ProductName</div>
+                                <div class="product-farm">
+                                    <i class="fas fa-tractor" style="color:#16a34a;font-size:.7rem;"></i>
+                                    @product.Farmer?.FarmName
+                                    <span style="margin-left:auto;color:#9ca3af;font-size:.72rem;">
+                                        <i class="fas fa-map-marker-alt" style="color:#f97316;"></i>
+                                        @product.Farmer?.City
+                                    </span>
+                                </div>
+                                <div class="product-footer">
+                                    <div class="product-price">
+                                        @product.Price.ToString("C")
+                                        <small>/ unit</small>
+                                    </div>
+                                    <a asp-controller="FarmerProducts" asp-action="Details"
+                                       asp-route-id="@product.FarmerProductID"
+                                       class="btn-view">
+                                        View <i class="fas fa-chevron-right" style="font-size:.65rem;"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="text-center mt-5">
+                <a asp-controller="FarmerProducts" asp-action="Index"
+                   style="display:inline-flex;align-items:center;gap:.5rem;background:#f3f4f6;color:#374151;text-decoration:none;padding:.75rem 2rem;border-radius:50px;font-weight:700;font-size:.875rem;transition:background .15s;">
+                    <i class="fas fa-th"></i> Browse All Products
+                </a>
+            </div>
+        }
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="section-tag">Simple process</span>
+            <h2 class="section-title">How NZFarmers Works</h2>
+            <p class="section-sub">Three steps to fresh local produce</p>
+        </div>
+        <div class="row justify-content-center g-4">
+            <div class="col-md-4">
+                <div class="step-card">
+                    <span class="step-emoji">🔍</span>
+                    <div class="step-num">1</div>
+                    <div class="step-title">Browse &amp; Discover</div>
+                    <p class="step-desc">Search hundreds of listings from verified NZ farmers. Filter by category, price, and location.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="step-card">
+                    <span class="step-emoji">🛒</span>
+                    <div class="step-num">2</div>
+                    <div class="step-title">Add to Cart &amp; Pay Securely</div>
+                    <p class="step-desc">Checkout with Stripe — your payment is protected until you confirm you've received your order.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="step-card">
+                    <span class="step-emoji">🌿</span>
+                    <div class="step-num">3</div>
+                    <div class="step-title">Receive &amp; Enjoy</div>
+                    <p class="step-desc">Fresh produce from farm to your door. Leave a review to help the community and reward great farmers.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FARMER CTA -->
+<div class="container">
+    <div class="cta-banner">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <p style="color:rgba(255,255,255,.45);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;">For Farmers</p>
+                <h2 class="cta-title">Start Selling on <span>NZFarmers</span> Today</h2>
+                <p class="cta-sub">Join 200+ NZ farmers already on the platform. List your first 10 products free, reach thousands of buyers, and grow your farm business.</p>
+                <div class="cta-pills">
+                    <span class="cta-pill"><i class="fas fa-check" style="color:#4ade80;"></i> Free to start</span>
+                    <span class="cta-pill"><i class="fas fa-check" style="color:#4ade80;"></i> Your own farmer profile</span>
+                    <span class="cta-pill"><i class="fas fa-check" style="color:#4ade80;"></i> Stripe-powered payments</span>
+                    <span class="cta-pill"><i class="fas fa-check" style="color:#4ade80;"></i> NZ-wide reach</span>
+                </div>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a asp-controller="Farmers" asp-action="Create"
+                       style="display:inline-flex;align-items:center;gap:.5rem;background:#f97316;color:white;text-decoration:none;padding:.85rem 1.75rem;border-radius:50px;font-weight:700;font-size:.9rem;">
+                        <i class="fas fa-tractor"></i> Create Farmer Profile
+                    </a>
+                    <a asp-controller="Home" asp-action="LearnMore"
+                       style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.08);color:white;text-decoration:none;padding:.85rem 1.5rem;border-radius:50px;font-weight:600;font-size:.9rem;border:1.5px solid rgba(255,255,255,.18);">
+                        Learn More
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center d-none d-lg-block">
+                <div style="font-size:7rem;line-height:1;">🌾</div>
+                <div style="color:rgba(255,255,255,.35);font-size:.8rem;margin-top:.5rem;">Farm to table, the NZ way</div>
+            </div>
+        </div>
+    </div>
+</div>

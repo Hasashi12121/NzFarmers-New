@@ -1,0 +1,567 @@
+@model NZFarmers.PaginatedList<NZFarmers.Models.Farmers>
+@{
+    ViewData["Title"] = "NZ Farmers Directory";
+
+    // Cycle through gradient themes for cards without a ProfileImage
+    string[] bannerGradients = new[]
+    {
+        "linear-gradient(135deg,#14532d 0%,#16a34a 60%,#22c55e 100%)",
+        "linear-gradient(135deg,#1e3a5f 0%,#2563eb 60%,#60a5fa 100%)",
+        "linear-gradient(135deg,#7c2d12 0%,#ea580c 60%,#fb923c 100%)",
+        "linear-gradient(135deg,#4a1d96 0%,#7c3aed 60%,#a78bfa 100%)",
+        "linear-gradient(135deg,#164e63 0%,#0891b2 60%,#22d3ee 100%)",
+        "linear-gradient(135deg,#713f12 0%,#ca8a04 60%,#fbbf24 100%)",
+    };
+    string[] bannerIcons = new[] { "🌿", "🥬", "🍊", "🌾", "🐄", "🥩" };
+
+    int idx = 0;
+}
+
+<div class="fp-page">
+
+    <!-- Page header -->
+    <div class="fp-header container-xl">
+        <div class="fp-header-left">
+            <h1 class="fp-title">NZ Farmers</h1>
+            <p class="fp-subtitle">@Model.TotalCount farm@(Model.TotalCount != 1 ? "s" : "") across New Zealand</p>
+        </div>
+        <div class="fp-header-right">
+            <form asp-action="Index" method="get" class="fp-search-form">
+                <input type="text" name="searchString" value="@ViewData["CurrentFilter"]"
+                       placeholder="Search farms, cities, regions…" class="fp-search-input" />
+                <button type="submit" class="fp-search-btn"><i class="fas fa-search"></i></button>
+                @if (!string.IsNullOrEmpty(ViewData["CurrentFilter"]?.ToString()))
+                {
+                    <a asp-action="Index" class="fp-clear-btn">✕</a>
+                }
+            </form>
+            @if (User.IsInRole("Admin") || User.IsInRole("Farmer"))
+            {
+                <a asp-action="Create" class="btn-add-farm">
+                    <i class="fas fa-plus"></i> Add Farm
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Sort bar -->
+    <div class="fp-sortbar container-xl">
+        <span class="sort-label">Sort:</span>
+        <a asp-action="Index" asp-route-sortOrder="@ViewData["NameSortParm"]"
+           asp-route-searchString="@ViewData["CurrentFilter"]" class="sort-chip">
+            <i class="fas fa-tractor"></i> Farm Name
+        </a>
+        <a asp-action="Index" asp-route-sortOrder="@ViewData["CitySortParm"]"
+           asp-route-searchString="@ViewData["CurrentFilter"]" class="sort-chip">
+            <i class="fas fa-city"></i> City
+        </a>
+        <a asp-action="Index" asp-route-sortOrder="@ViewData["RegionSortParm"]"
+           asp-route-searchString="@ViewData["CurrentFilter"]" class="sort-chip">
+            <i class="fas fa-map-marker-alt"></i> Region
+        </a>
+    </div>
+
+    <!-- Farmers grid -->
+    <div class="fp-grid container-xl">
+        @if (Model.Any())
+        {
+            @foreach (var farmer in Model)
+            {
+                var gradient  = bannerGradients[idx % bannerGradients.Length];
+                var icon      = bannerIcons[idx % bannerIcons.Length];
+                idx++;
+
+                <div class="farm-card">
+
+                    <!-- Banner -->
+                    <div class="farm-banner"
+                         style="@(string.IsNullOrEmpty(farmer.ProfileImage)
+                                    ? $"background:{gradient};"
+                                    : $"background:url('{farmer.ProfileImage}') center/cover no-repeat;")">
+
+                        @if (string.IsNullOrEmpty(farmer.ProfileImage))
+                        {
+                            <div class="farm-banner-icon">@icon</div>
+                        }
+
+                        <div class="farm-banner-overlay">
+                            <h2 class="farm-name">@farmer.FarmName</h2>
+                            <p class="farm-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                @farmer.City, @farmer.Region
+                            </p>
+                        </div>
+
+                        @if (User.IsInRole("Admin") || User.IsInRole("Farmer"))
+                        {
+                            <div class="farm-banner-actions">
+                                <a asp-action="Edit" asp-route-id="@farmer.FarmerID" class="banner-btn-edit" title="Edit">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@farmer.FarmerID" class="banner-btn-delete" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Body -->
+                    <div class="farm-body">
+                        @if (!string.IsNullOrEmpty(farmer.Description))
+                        {
+                            <p class="farm-desc">
+                                @(farmer.Description.Length > 130
+                                    ? farmer.Description.Substring(0, 130) + "…"
+                                    : farmer.Description)
+                            </p>
+                        }
+
+                        <div class="farm-details">
+                            @if (!string.IsNullOrEmpty(farmer.PhoneNumber))
+                            {
+                                <div class="detail-row">
+                                    <i class="fas fa-phone"></i>
+                                    <span>@farmer.PhoneNumber</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(farmer.Address))
+                            {
+                                <div class="detail-row">
+                                    <i class="fas fa-home"></i>
+                                    <span>@farmer.Address</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(farmer.ZipCode))
+                            {
+                                <div class="detail-row">
+                                    <i class="fas fa-envelope"></i>
+                                    <span>@farmer.ZipCode</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Footer actions -->
+                    <div class="farm-footer">
+                        <a asp-action="Details" asp-route-id="@farmer.FarmerID" class="farm-btn farm-btn-primary">
+                            <i class="fas fa-eye"></i> View Profile
+                        </a>
+                        <a asp-controller="FarmerProducts" asp-action="Index"
+                           asp-route-searchString="@farmer.FarmName" class="farm-btn farm-btn-secondary">
+                            <i class="fas fa-seedling"></i> Products
+                        </a>
+                    </div>
+
+                </div>
+            }
+        }
+        else
+        {
+            <div class="fp-empty">
+                <div class="fp-empty-icon">🚜</div>
+                <h3>No farms found</h3>
+                <p>@(string.IsNullOrEmpty(ViewData["CurrentFilter"]?.ToString()) ? "No farmers have registered yet." : "No farms match your search.")</p>
+                @if (User.IsInRole("Admin") || User.IsInRole("Farmer"))
+                {
+                    <a asp-action="Create" class="btn-add-farm">Add First Farm</a>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="fp-pagination container-xl">
+            @if (Model.HasPreviousPage)
+            {
+                <a class="pg-btn" asp-action="Index"
+                   asp-route-page="@(Model.PageIndex - 1)"
+                   asp-route-searchString="@ViewData["CurrentFilter"]"
+                   asp-route-sortOrder="@ViewData["CurrentSort"]">
+                    <i class="fas fa-chevron-left"></i> Prev
+                </a>
+            }
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <a class="pg-btn @(i == Model.PageIndex ? "active" : "")"
+                   asp-action="Index"
+                   asp-route-page="@i"
+                   asp-route-searchString="@ViewData["CurrentFilter"]"
+                   asp-route-sortOrder="@ViewData["CurrentSort"]">@i</a>
+            }
+            @if (Model.HasNextPage)
+            {
+                <a class="pg-btn" asp-action="Index"
+                   asp-route-page="@(Model.PageIndex + 1)"
+                   asp-route-searchString="@ViewData["CurrentFilter"]"
+                   asp-route-sortOrder="@ViewData["CurrentSort"]">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            }
+        </div>
+    }
+
+</div>
+
+<style>
+    .fp-page {
+        background: #1a1f2e;
+        min-height: 100vh;
+        padding-bottom: 4rem;
+        width: 100vw;
+        margin-left: calc(-50vw + 50%);
+    }
+
+    .container-xl {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* ── HEADER ── */
+    .fp-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+        padding-top: 2.5rem;
+        padding-bottom: 1.5rem;
+    }
+
+    .fp-title {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #fff;
+        margin: 0;
+        letter-spacing: -.02em;
+    }
+
+    .fp-subtitle {
+        color: #8b92a5;
+        font-size: .9rem;
+        margin: .2rem 0 0;
+    }
+
+    .fp-header-right {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        flex-wrap: wrap;
+    }
+
+    /* Search */
+    .fp-search-form {
+        display: flex;
+        align-items: center;
+        background: #252b3b;
+        border: 1px solid #2e3549;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .fp-search-input {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #e2e8f0;
+        padding: .6rem 1rem;
+        font-size: .9rem;
+        width: 260px;
+    }
+
+    .fp-search-input::placeholder { color: #5a6580; }
+
+    .fp-search-btn, .fp-clear-btn {
+        background: none;
+        border: none;
+        color: #8b92a5;
+        padding: .6rem .9rem;
+        cursor: pointer;
+        font-size: .9rem;
+        transition: color .15s;
+        text-decoration: none;
+    }
+
+    .fp-search-btn:hover, .fp-clear-btn:hover { color: #fff; }
+
+    .btn-add-farm {
+        background: #5ba35b;
+        color: #fff;
+        text-decoration: none;
+        padding: .6rem 1.2rem;
+        border-radius: 8px;
+        font-size: .875rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        transition: background .15s;
+        white-space: nowrap;
+    }
+
+    .btn-add-farm:hover { background: #4a8f4a; color: #fff; text-decoration: none; }
+
+    /* ── SORT BAR ── */
+    .fp-sortbar {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        padding-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .sort-label {
+        color: #8b92a5;
+        font-size: .85rem;
+        font-weight: 600;
+        margin-right: .25rem;
+    }
+
+    .sort-chip {
+        background: #252b3b;
+        border: 1px solid #2e3549;
+        color: #c6cde0;
+        text-decoration: none;
+        padding: .35rem .85rem;
+        border-radius: 20px;
+        font-size: .8rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        transition: background .15s, border-color .15s, color .15s;
+    }
+
+    .sort-chip:hover {
+        background: #2e3549;
+        border-color: #5ba35b;
+        color: #fff;
+        text-decoration: none;
+    }
+
+    /* ── GRID ── */
+    .fp-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 1.5rem;
+        padding-bottom: 2rem;
+    }
+
+    /* ── FARM CARD ── */
+    .farm-card {
+        background: #252b3b;
+        border: 1px solid #2e3549;
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: transform .2s, box-shadow .2s, border-color .2s;
+    }
+
+    .farm-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 40px rgba(0,0,0,.5);
+        border-color: #5ba35b;
+    }
+
+    /* Banner */
+    .farm-banner {
+        position: relative;
+        height: 190px;
+        overflow: hidden;
+    }
+
+    .farm-banner-icon {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 5rem;
+        opacity: .35;
+    }
+
+    .farm-banner-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,.75));
+        padding: 1.5rem 1.25rem .9rem;
+    }
+
+    .farm-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #fff;
+        margin: 0 0 .2rem;
+        text-shadow: 0 1px 4px rgba(0,0,0,.6);
+    }
+
+    .farm-location {
+        font-size: .82rem;
+        color: rgba(255,255,255,.8);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+    }
+
+    /* Edit/delete buttons on banner */
+    .farm-banner-actions {
+        position: absolute;
+        top: .75rem;
+        right: .75rem;
+        display: flex;
+        gap: .4rem;
+        opacity: 0;
+        transition: opacity .2s;
+    }
+
+    .farm-card:hover .farm-banner-actions { opacity: 1; }
+
+    .banner-btn-edit, .banner-btn-delete {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .78rem;
+        text-decoration: none;
+        transition: background .15s;
+        backdrop-filter: blur(4px);
+    }
+
+    .banner-btn-edit {
+        background: rgba(255,255,255,.15);
+        color: #fff;
+    }
+
+    .banner-btn-edit:hover { background: rgba(255,255,255,.3); color: #fff; text-decoration: none; }
+
+    .banner-btn-delete {
+        background: rgba(220,38,38,.2);
+        color: #fca5a5;
+    }
+
+    .banner-btn-delete:hover { background: rgba(220,38,38,.5); color: #fff; text-decoration: none; }
+
+    /* Body */
+    .farm-body {
+        padding: 1rem 1.25rem;
+        flex: 1;
+    }
+
+    .farm-desc {
+        color: #9aa5bc;
+        font-size: .875rem;
+        line-height: 1.55;
+        margin: 0 0 1rem;
+    }
+
+    .farm-details {
+        display: flex;
+        flex-direction: column;
+        gap: .45rem;
+    }
+
+    .detail-row {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        font-size: .82rem;
+        color: #8b92a5;
+    }
+
+    .detail-row i {
+        width: 14px;
+        color: #5ba35b;
+        flex-shrink: 0;
+        text-align: center;
+    }
+
+    /* Footer */
+    .farm-footer {
+        border-top: 1px solid #2e3549;
+        padding: .85rem 1.25rem;
+        display: flex;
+        gap: .6rem;
+    }
+
+    .farm-btn {
+        flex: 1;
+        text-align: center;
+        text-decoration: none;
+        padding: .55rem .5rem;
+        border-radius: 6px;
+        font-size: .82rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .4rem;
+        transition: background .15s, color .15s;
+    }
+
+    .farm-btn-primary {
+        background: #5ba35b;
+        color: #fff;
+    }
+
+    .farm-btn-primary:hover { background: #4a8f4a; color: #fff; text-decoration: none; }
+
+    .farm-btn-secondary {
+        background: #2e3549;
+        color: #c6cde0;
+    }
+
+    .farm-btn-secondary:hover { background: #374060; color: #fff; text-decoration: none; }
+
+    /* Empty */
+    .fp-empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 5rem 2rem;
+        color: #8b92a5;
+    }
+
+    .fp-empty-icon { font-size: 4rem; margin-bottom: 1rem; }
+    .fp-empty h3 { color: #c6cde0; margin-bottom: .5rem; }
+
+    /* Pagination */
+    .fp-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: .4rem;
+        padding-top: 1rem;
+    }
+
+    .pg-btn {
+        background: #252b3b;
+        border: 1px solid #2e3549;
+        color: #c6cde0;
+        text-decoration: none;
+        padding: .5rem .9rem;
+        border-radius: 6px;
+        font-size: .85rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        transition: background .15s, border-color .15s;
+    }
+
+    .pg-btn:hover { background: #2e3549; color: #fff; text-decoration: none; border-color: #5ba35b; }
+    .pg-btn.active { background: #5ba35b; border-color: #5ba35b; color: #fff; }
+
+    @@media (max-width: 768px) {
+        .fp-header { flex-direction: column; align-items: flex-start; }
+        .fp-header-right { width: 100%; }
+        .fp-search-input { width: 100%; }
+        .fp-grid { grid-template-columns: 1fr; }
+    }
+</style>

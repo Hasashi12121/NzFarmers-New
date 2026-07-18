@@ -1,0 +1,48 @@
+﻿@model NZFarmers.Models.PaymentDetail
+
+@{
+    ViewData["Title"] = "Create Payment Detail";
+}
+
+<h1>Create Payment Detail</h1>
+
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <!-- OrderID Dropdown -->
+    <div class="form-group">
+        <label asp-for="OrderID" class="control-label"></label>
+        <select asp-for="OrderID" class="form-control" asp-items="@(ViewBag.OrderID as SelectList)"></select>
+        <span asp-validation-for="OrderID" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Amount" class="control-label"></label>
+        <input asp-for="Amount" class="form-control" />
+        <span asp-validation-for="Amount" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Status" class="control-label"></label>
+        <select asp-for="Status" class="form-control" asp-items="@(Html.GetEnumSelectList<PaymentStatus>())"></select>
+        <span asp-validation-for="Status" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Method" class="control-label"></label>
+        <select asp-for="Method" class="form-control" asp-items="@(Html.GetEnumSelectList<PaymentMethod>())"></select>
+        <span asp-validation-for="Method" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">Create</button>
+</form>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

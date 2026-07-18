@@ -1,0 +1,511 @@
+@model PaginatedList<NZFarmers.Models.FarmerProduct>
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Browse Products — NZFarmers";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var currentSearch   = ViewData["CurrentSearch"]   as string ?? "";
+    var currentCategory = ViewData["CurrentCategory"] as string ?? "";
+}
+
+<style>
+    .listings-page { background: #f9fafb; min-height: 100vh; padding-bottom: 4rem; }
+
+    /* Page header */
+    .listings-header {
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 1.5rem 0;
+    }
+    .listings-header h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
+    .listings-breadcrumb { font-size: .8rem; color: #9ca3af; margin-bottom: .25rem; }
+    .listings-breadcrumb a { color: #15803d; text-decoration: none; }
+
+    /* Filter bar */
+    .filter-bar {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .filter-bar form { display: flex; gap: .75rem; align-items: flex-end; flex-wrap: wrap; }
+    .filter-field { flex: 1; min-width: 160px; }
+    .filter-field label { font-size: .75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .06em; display: block; margin-bottom: .3rem; }
+    .filter-field .form-control,
+    .filter-field .form-select {
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        padding: .55rem .85rem;
+        font-size: .875rem;
+        transition: border-color .2s, box-shadow .2s;
+    }
+    .filter-field .form-control:focus,
+    .filter-field .form-select:focus {
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(34,197,94,.12);
+        outline: none;
+    }
+    .btn-filter {
+        background: #15803d;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: .6rem 1.5rem;
+        font-weight: 700;
+        font-size: .875rem;
+        white-space: nowrap;
+        transition: background .15s;
+        cursor: pointer;
+    }
+    .btn-filter:hover { background: #166534; }
+    .btn-clear {
+        background: #f3f4f6;
+        color: #6b7280;
+        border: none;
+        border-radius: 10px;
+        padding: .6rem 1rem;
+        font-size: .8rem;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+    }
+    .btn-clear:hover { background: #e5e7eb; color: #374151; }
+
+    /* Results bar */
+    .results-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+    .results-count { font-size: .875rem; color: #6b7280; }
+    .results-count strong { color: #111827; }
+    .active-filters { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .filter-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        background: #dcfce7;
+        color: #15803d;
+        border-radius: 50px;
+        padding: .2rem .65rem;
+        font-size: .75rem;
+        font-weight: 600;
+    }
+    .filter-tag a { color: #15803d; text-decoration: none; margin-left: .2rem; }
+
+    /* Product grid */
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; }
+
+    /* Product card */
+    .p-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: all .25s;
+    }
+    .p-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,.09);
+        border-color: transparent;
+    }
+    .p-card-img {
+        height: 185px;
+        overflow: hidden;
+        background: #f3f4f6;
+        position: relative;
+    }
+    .p-card-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform .4s;
+    }
+    .p-card:hover .p-card-img img { transform: scale(1.06); }
+    .p-card-no-img {
+        width: 100%; height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #d1d5db;
+    }
+    .p-badge {
+        position: absolute;
+        top: 10px; left: 10px;
+        background: #f97316;
+        color: white;
+        font-size: .68rem;
+        font-weight: 700;
+        padding: .2rem .6rem;
+        border-radius: 50px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+    .p-stock {
+        position: absolute;
+        top: 10px; right: 10px;
+        background: rgba(255,255,255,.9);
+        color: #15803d;
+        font-size: .68rem;
+        font-weight: 700;
+        padding: .2rem .6rem;
+        border-radius: 50px;
+        backdrop-filter: blur(4px);
+    }
+    .p-stock.low { color: #dc2626; }
+    .p-body {
+        padding: 1rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .p-cat { font-size: .68rem; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: .07em; margin-bottom: .3rem; }
+    .p-name { font-size: .975rem; font-weight: 700; color: #111827; margin-bottom: .3rem; line-height: 1.35; }
+    .p-farm { font-size: .78rem; color: #6b7280; display: flex; align-items: center; gap: .3rem; margin-bottom: .85rem; }
+    .p-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: auto;
+        padding-top: .7rem;
+        border-top: 1px solid #f3f4f6;
+        gap: .5rem;
+    }
+    .p-price { font-size: 1.15rem; font-weight: 800; color: #15803d; line-height: 1; }
+    .p-price small { display: block; font-size: .68rem; color: #9ca3af; font-weight: 400; margin-top: .1rem; }
+    .p-actions { display: flex; gap: .4rem; }
+    .btn-details {
+        background: #15803d;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: .4rem .85rem;
+        font-size: .78rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background .15s;
+        white-space: nowrap;
+    }
+    .btn-details:hover { background: #166534; color: white; }
+    .btn-edit-sm {
+        background: #f3f4f6;
+        color: #6b7280;
+        border: none;
+        border-radius: 50px;
+        padding: .4rem .7rem;
+        font-size: .75rem;
+        text-decoration: none;
+        transition: background .15s;
+    }
+    .btn-edit-sm:hover { background: #e5e7eb; color: #374151; }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 5rem 2rem;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+    }
+    .empty-state .emoji { font-size: 4rem; margin-bottom: 1rem; }
+    .empty-state h3 { font-weight: 700; color: #374151; }
+    .empty-state p { color: #9ca3af; }
+
+    /* Pagination */
+    .pagination-wrap { margin-top: 2.5rem; display: flex; justify-content: center; gap: .35rem; flex-wrap: wrap; }
+    .page-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 38px;
+        height: 38px;
+        padding: 0 .75rem;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: .875rem;
+        font-weight: 600;
+        color: #374151;
+        text-decoration: none;
+        background: white;
+        transition: all .15s;
+    }
+    .page-btn:hover { background: #f0fdf4; border-color: #16a34a; color: #15803d; }
+    .page-btn.active { background: #15803d; border-color: #15803d; color: white; }
+    .page-btn.disabled { opacity: .4; pointer-events: none; }
+
+    /* Sell CTA card */
+    .sell-cta {
+        background: linear-gradient(135deg, #15803d, #166534);
+        border-radius: 16px;
+        padding: 1.75rem;
+        color: white;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+    .sell-cta h5 { font-weight: 800; margin-bottom: .4rem; }
+    .sell-cta p { font-size: .8rem; color: rgba(255,255,255,.75); margin-bottom: 1rem; }
+    .btn-sell-cta {
+        background: #f97316;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: .55rem 1.25rem;
+        font-weight: 700;
+        font-size: .85rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+    }
+    .btn-sell-cta:hover { background: #ea6c0d; color: white; }
+
+    @@media (max-width: 575px) {
+        .product-grid { grid-template-columns: 1fr 1fr; gap: .75rem; }
+        .p-card-img { height: 150px; }
+        .p-name { font-size: .875rem; }
+        .filter-bar form { flex-direction: column; }
+        .filter-field { width: 100%; }
+    }
+    @@media (max-width: 380px) {
+        .product-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="listings-page">
+    <!-- Page Header -->
+    <div class="listings-header">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <div class="listings-breadcrumb">
+                        <a asp-controller="Home" asp-action="Index">Home</a> / Products
+                    </div>
+                    <h1>
+                        @if (!string.IsNullOrEmpty(currentCategory))
+                        {
+                            @currentCategory
+                        }
+                        else
+                        {
+                            <text>Fresh Products</text>
+                        }
+                    </h1>
+                </div>
+                @if (User.IsInRole("Admin") || User.IsInRole("Farmer"))
+                {
+                    <a asp-action="Create"
+                       style="display:inline-flex;align-items:center;gap:.4rem;background:#f97316;color:white;text-decoration:none;padding:.6rem 1.25rem;border-radius:50px;font-weight:700;font-size:.875rem;">
+                        <i class="fas fa-plus"></i> List a Product
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        <div class="row g-4">
+            <!-- Sidebar -->
+            <div class="col-lg-3 d-none d-lg-block">
+                <!-- Sell CTA (farmers only) -->
+                @if (User.IsInRole("Admin") || User.IsInRole("Farmer"))
+                {
+                    <div class="sell-cta">
+                        <h5>List Your Products</h5>
+                        <p>Reach thousands of buyers across New Zealand</p>
+                        <a asp-action="Create" class="btn-sell-cta"><i class="fas fa-plus"></i> Sell Now</a>
+                    </div>
+                }
+
+                <!-- Category filter sidebar -->
+                <div class="filter-bar p-0" style="overflow:hidden;">
+                    <div style="padding:.9rem 1.1rem;border-bottom:1px solid #e5e7eb;font-size:.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;">
+                        Categories
+                    </div>
+                    @{
+                        var sidebarCats = new[] {
+                            new { Label="All Products",  Cat="",           Icon="fas fa-th" },
+                            new { Label="Vegetables",    Cat="Vegetables", Icon="fas fa-carrot" },
+                            new { Label="Fruits",        Cat="Fruits",     Icon="fas fa-apple-alt" },
+                            new { Label="Dairy",         Cat="Dairy",      Icon="fas fa-cheese" },
+                            new { Label="Meat",          Cat="Meat",       Icon="fas fa-drumstick-bite" },
+                            new { Label="Seeds",         Cat="Seeds",      Icon="fas fa-seedling" },
+                            new { Label="Grains",        Cat="Grains",     Icon="fas fa-wheat-awn" },
+                            new { Label="Other",         Cat="Other",      Icon="fas fa-box-open" },
+                        };
+                    }
+                    @foreach (var sc in sidebarCats)
+                    {
+                        var isActive = currentCategory == sc.Cat;
+                        <a asp-action="Index"
+                           asp-route-categoryFilter="@sc.Cat"
+                           asp-route-searchString="@currentSearch"
+                           style="display:flex;align-items:center;gap:.6rem;padding:.65rem 1.1rem;text-decoration:none;font-size:.875rem;font-weight:@(isActive ? "700" : "500");color:@(isActive ? "#15803d" : "#374151");background:@(isActive ? "#f0fdf4" : "transparent");border-left:3px solid @(isActive ? "#16a34a" : "transparent");transition:all .1s;">
+                            <i class="@sc.Icon" style="width:16px;color:@(isActive ? "#16a34a" : "#9ca3af");font-size:.8rem;"></i>
+                            @sc.Label
+                        </a>
+                    }
+                </div>
+            </div>
+
+            <!-- Main content -->
+            <div class="col-lg-9">
+                <!-- Filter bar -->
+                <div class="filter-bar">
+                    <form asp-action="Index" method="get">
+                        <div class="filter-field" style="flex:2;">
+                            <label>Search</label>
+                            <input type="text" name="searchString" class="form-control"
+                                   value="@currentSearch"
+                                   placeholder="Search products, farms, locations…" />
+                        </div>
+                        <div class="filter-field d-lg-none">
+                            <label>Category</label>
+                            <select name="categoryFilter" class="form-select"
+                                    asp-items="@(ViewData["CategoryList"] as SelectList)">
+                                <option value="">All Categories</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-filter">
+                            <i class="fas fa-search me-1"></i> Search
+                        </button>
+                        @if (!string.IsNullOrEmpty(currentSearch) || !string.IsNullOrEmpty(currentCategory))
+                        {
+                            <a asp-action="Index" class="btn-clear">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        }
+                    </form>
+                </div>
+
+                <!-- Results bar -->
+                <div class="results-bar">
+                    <div class="results-count">
+                        <strong>@Model.TotalCount</strong> product@(Model.TotalCount == 1 ? "" : "s") found
+                        @if (!string.IsNullOrEmpty(currentCategory)) { <text> in <strong>@currentCategory</strong></text> }
+                        @if (!string.IsNullOrEmpty(currentSearch)) { <text> for "<strong>@currentSearch</strong>"</text> }
+                    </div>
+                    <div class="active-filters">
+                        @if (!string.IsNullOrEmpty(currentCategory))
+                        {
+                            <span class="filter-tag">
+                                @currentCategory
+                                <a asp-action="Index" asp-route-searchString="@currentSearch" title="Remove">×</a>
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Products -->
+                @if (!Model.Any())
+                {
+                    <div class="empty-state">
+                        <div class="emoji">🌱</div>
+                        <h3>No products found</h3>
+                        <p>Try adjusting your filters or search terms.</p>
+                        <a asp-action="Index"
+                           style="display:inline-flex;align-items:center;gap:.4rem;background:#15803d;color:white;text-decoration:none;padding:.65rem 1.5rem;border-radius:50px;font-weight:700;font-size:.875rem;margin-top:.75rem;">
+                            <i class="fas fa-th"></i> View All Products
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="product-grid">
+                        @foreach (var item in Model)
+                        {
+                            <div class="p-card">
+                                <div class="p-card-img">
+                                    @if (!string.IsNullOrEmpty(item.ImageURL))
+                                    {
+                                        <img src="@item.ImageURL" alt="@item.ProductName"
+                                             onerror="this.parentElement.innerHTML='<div class=\'p-card-no-img\'>🌿</div>'" />
+                                    }
+                                    else
+                                    {
+                                        <div class="p-card-no-img">🌿</div>
+                                    }
+                                    <span class="p-badge">@item.Category</span>
+                                    <span class="p-stock @(item.Stock < 5 ? "low" : "")">
+                                        @(item.Stock > 0 ? $"{item.Stock} left" : "Out of stock")
+                                    </span>
+                                </div>
+                                <div class="p-body">
+                                    <div class="p-cat">@item.Category</div>
+                                    <div class="p-name">@item.ProductName</div>
+                                    <div class="p-farm">
+                                        <i class="fas fa-tractor" style="color:#16a34a;font-size:.65rem;"></i>
+                                        @item.Farmer?.FarmName
+                                        <span style="margin-left:auto;font-size:.72rem;color:#9ca3af;">
+                                            <i class="fas fa-map-marker-alt" style="color:#f97316;"></i>
+                                            @item.Farmer?.City
+                                        </span>
+                                    </div>
+                                    <div class="p-footer">
+                                        <div class="p-price">
+                                            @item.Price.ToString("C")
+                                            <small>per unit</small>
+                                        </div>
+                                        <div class="p-actions">
+                                            @if (User.IsInRole("Admin") || User.IsInRole("Farmer"))
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@item.FarmerProductID" class="btn-edit-sm">
+                                                    <i class="fas fa-pen"></i>
+                                                </a>
+                                            }
+                                            <a asp-action="Details" asp-route-id="@item.FarmerProductID" class="btn-details">
+                                                View
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Pagination -->
+                    @if (Model.TotalPages > 1)
+                    {
+                        <div class="pagination-wrap">
+                            <a asp-action="Index"
+                               asp-route-pageNumber="@(Model.PageIndex - 1)"
+                               asp-route-searchString="@currentSearch"
+                               asp-route-categoryFilter="@currentCategory"
+                               class="page-btn @(!Model.HasPreviousPage ? "disabled" : "")">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <a asp-action="Index"
+                                   asp-route-pageNumber="@i"
+                                   asp-route-searchString="@currentSearch"
+                                   asp-route-categoryFilter="@currentCategory"
+                                   class="page-btn @(i == Model.PageIndex ? "active" : "")">
+                                    @i
+                                </a>
+                            }
+
+                            <a asp-action="Index"
+                               asp-route-pageNumber="@(Model.PageIndex + 1)"
+                               asp-route-searchString="@currentSearch"
+                               asp-route-categoryFilter="@currentCategory"
+                               class="page-btn @(!Model.HasNextPage ? "disabled" : "")">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

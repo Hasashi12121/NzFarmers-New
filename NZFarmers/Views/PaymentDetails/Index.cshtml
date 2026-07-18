@@ -1,0 +1,55 @@
+﻿@model IEnumerable<NZFarmers.Models.PaymentDetail>
+
+@{
+    ViewData["Title"] = "Payment Details";
+}
+
+<h1>Payment Details</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>User Email</th>
+            <th>Order ID</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Method</th>
+            <th>CreatedAt</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var payment in Model)
+        {
+            <tr>
+                <td>
+                    @payment.User?.Email
+                </td>
+                <td>
+                    @payment.OrderID
+                </td>
+                <td>
+                    @payment.Amount.ToString("C")
+                </td>
+                <td>
+                    @payment.Status
+                </td>
+                <td>
+                    @payment.Method
+                </td>
+                <td>
+                    @payment.CreatedAt
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@payment.PaymentID">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@payment.PaymentID">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@payment.PaymentID">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
